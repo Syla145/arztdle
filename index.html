@@ -5,39 +5,42 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Arztdle - Täglich Medizin-Diagnosen erraten</title>
     <style>
-        :root { --bg-blue: #f0f7ff; --hint-blue: #d1e9ff; --text-dark: #2c3e50; --accent-brown: #5d4037; --success: #27ae60; --error: #c0392b; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg-blue); margin: 0; color: var(--text-dark); }
-        
-        nav { width: 100%; background: #fff; border-bottom: 1px solid #d1d9e0; padding: 15px 0; display: flex; justify-content: center; gap: 40px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        nav a { text-decoration: none; color: #666; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        nav a:hover { color: var(--accent-brown); }
+      :root { 
+    --bg-blue: #f0f7ff; 
+    --hint-blue: #d1e9ff; 
+    --text-dark: #2c3e50; 
+    --accent-brown: #5d4037; 
+    --success: #27ae60; 
+    --error: #c0392b; 
+}
+body { font-family: 'Segoe UI', sans-serif; background: var(--bg-blue); margin: 0; color: var(--text-dark); }
 
-        .container { max-width: 500px; margin: 40px auto; padding: 20px; background: white; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.1); text-align: center; }
-        .header-info { color: #888; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; }
-        h1 { margin: 10px 0 25px 0; font-size: 1.5rem; }
+nav { width: 100%; background: #fff; border-bottom: 1px solid #d1d9e0; padding: 15px 0; display: flex; justify-content: center; gap: 40px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+nav a { text-decoration: none; color: #666; font-weight: bold; cursor: pointer; }
 
-        .hint-container { min-height: 300px; }
-        .hint-box { background: var(--hint-blue); border-radius: 10px; padding: 15px; margin-bottom: 12px; text-align: left; font-size: 0.95rem; line-height: 1.5; display: none; border-left: 5px solid #a5d8ff; animation: slideIn 0.4s ease-out; }
-        .hint-box.visible { display: block; }
-        @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+.container { max-width: 500px; margin: 40px auto; padding: 20px; background: white; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.1); text-align: center; }
+.header-info { color: #888; font-size: 0.8rem; letter-spacing: 1px; margin-bottom: 10px; }
 
-        .input-area { position: relative; margin-top: 30px; display: flex; gap: 10px; }
-        input { flex: 1; padding: 14px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1rem; outline: none; transition: border 0.3s; }
-        input:focus { border-color: var(--accent-brown); }
-        
-        button#submit-btn { background: var(--accent-brown); color: white; border: none; padding: 0 20px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        button#submit-btn:hover { opacity: 0.9; }
+/* Hinweise ohne Nummerierung */
+.hint-box { background: var(--hint-blue); border-radius: 10px; padding: 15px; margin-bottom: 12px; text-align: left; font-size: 0.95rem; line-height: 1.5; display: none; border-left: 5px solid #a5d8ff; animation: slideIn 0.3s ease-out; }
+.hint-box.visible { display: block; }
+@keyframes slideIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Autocomplete */
-        .autocomplete-suggestions { position: absolute; top: 100%; left: 0; width: calc(100% - 100px); background: white; border: 1px solid #ddd; border-top: none; z-index: 100; max-height: 200px; overflow-y: auto; border-radius: 0 0 8px 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .suggestion { padding: 12px; cursor: pointer; text-align: left; font-size: 0.9rem; }
-        .suggestion:hover { background: #f8f9fa; color: var(--accent-brown); }
+.input-area { position: relative; margin-top: 30px; display: flex; gap: 10px; }
+input { flex: 1; padding: 14px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1rem; outline: none; }
+button#submit-btn { background: var(--accent-brown); color: white; border: none; padding: 0 20px; border-radius: 8px; font-weight: bold; cursor: pointer; }
 
-        #status-msg { margin-top: 20px; font-weight: bold; min-height: 24px; }
-        .section { display: none; }
-        .active { display: block; }
-        .archive-list { text-align: left; margin-top: 20px; }
-        .archive-item { padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+/* Autocomplete */
+.autocomplete-suggestions { position: absolute; top: 100%; left: 0; width: calc(100% - 100px); background: white; border: 1px solid #ddd; z-index: 100; max-height: 200px; overflow-y: auto; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+.suggestion { padding: 12px; cursor: pointer; text-align: left; }
+.suggestion:hover { background: #f8f9fa; color: var(--accent-brown); }
+
+/* MODAL / POPUP */
+.modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(3px); }
+.modal-content { background: white; margin: 15% auto; padding: 30px; border-radius: 15px; width: 80%; max-width: 400px; text-align: center; position: relative; animation: pop 0.4s cubic-bezier(0.17, 0.89, 0.32, 1.49); }
+@keyframes pop { from { transform: scale(0.5); } to { transform: scale(1); } }
+.close-btn { position: absolute; top: 10px; right: 15px; font-size: 24px; cursor: pointer; color: #999; }
+.stat-box { font-size: 1.2rem; margin: 20px 0; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -2029,8 +2032,9 @@
 ]}
 ];
 
-    let currentPuzzleIndex = 0;
+     let currentPuzzleIndex = 0;
     let revealedCount = 1;
+    let gameOver = false;
 
     // --- LOGIK ---
     function showSection(id) {
@@ -2040,64 +2044,89 @@
     }
 
     function loadDaily() {
-        const today = new Date().toISOString().split('T')[0]; // "2026-03-20"
+        const today = new Date().toISOString().split('T')[0]; 
         let puzzle = puzzles.find(p => p.date === today);
-        if(!puzzle) puzzle = puzzles[puzzles.length - 1]; // Falls kein Datum passt, nimm das letzte
+        if(!puzzle) puzzle = puzzles[puzzles.length - 1]; 
         initGame(puzzle);
     }
 
     function initGame(puzzle) {
         revealedCount = 1;
-        document.getElementById('meta-info').innerText = `Arztdle #${puzzle.id} - ${puzzle.date}`;
-        document.getElementById('status-msg').innerText = "";
-        document.getElementById('guess-input').value = "";
+        gameOver = false;
+        document.getElementById('guess-input').disabled = false;
+        document.getElementById('meta-info').innerText = `Arztdle #${puzzle.id} - ${new Date(puzzle.date).toLocaleDateString('de-DE')}`;
         
         const wrapper = document.getElementById('hint-wrapper');
         wrapper.innerHTML = "";
+        
         puzzle.hints.forEach((h, i) => {
             const div = document.createElement('div');
             div.className = `hint-box ${i === 0 ? 'visible' : ''}`;
             div.id = `h-${i}`;
-            div.innerText = `${i+1}. Hinweis: ${h}`;
+            div.innerText = h; // Hier wurden die Nummern entfernt
             wrapper.appendChild(div);
         });
         currentPuzzleIndex = puzzles.indexOf(puzzle);
     }
 
     function checkAnswer() {
-        const input = document.getElementById('guess-input');
-        const guess = input.value.trim().toLowerCase();
+        if(gameOver) return;
+
+        const inputField = document.getElementById('guess-input');
+        const guess = inputField.value.trim().toLowerCase();
         const solution = puzzles[currentPuzzleIndex].solution.toLowerCase();
-        const msg = document.getElementById('status-msg');
 
         if(guess === solution) {
-            msg.innerText = "Richtig! Hervorragende Diagnose. 🩺";
-            msg.style.color = "var(--success)";
-            // Zeige alle Hinweise
-            for(let i=0; i<6; i++) {
-                let el = document.getElementById(`h-${i}`);
-                if(el) el.classList.add('visible');
-            }
+            showPopup(true);
         } else {
-            if(revealedCount < puzzles[currentPuzzleIndex].hints.length) {
+            if(revealedCount < 6) {
                 document.getElementById(`h-${revealedCount}`).classList.add('visible');
                 revealedCount++;
-                msg.innerText = "Falsch! Ein weiterer Hinweis wurde freigeschaltet.";
-                msg.style.color = "orange";
             } else {
-                msg.innerText = `Leider nicht richtig. Die Lösung war: ${puzzles[currentPuzzleIndex].solution}`;
-                msg.style.color = "var(--error)";
+                showPopup(false);
             }
         }
-        input.value = "";
+        inputField.value = "";
+    }
+
+    // --- POPUP LOGIK ---
+    function showPopup(isWin) {
+        gameOver = true;
+        document.getElementById('guess-input').disabled = true;
+        const modal = document.getElementById('resultModal');
+        const title = document.getElementById('modal-title');
+        const body = document.getElementById('modal-body');
+        const solText = document.getElementById('modal-solution');
+
+        if(isWin) {
+            title.innerText = "Richtig gelöst! 🎉";
+            title.style.color = "var(--success)";
+            body.innerText = `Du hast ${revealedCount} von 6 Hinweisen gebraucht.`;
+            solText.innerText = `Diagnose: ${puzzles[currentPuzzleIndex].solution}`;
+        } else {
+            title.innerText = "Nicht geschafft 🩺";
+            title.style.color = "var(--error)";
+            body.innerText = "Alle Hinweise wurden aufgebraucht.";
+            solText.innerText = `Die gesuchte Diagnose war: ${puzzles[currentPuzzleIndex].solution}`;
+        }
+        modal.style.display = "block";
+    }
+
+    function closeModal() {
+        document.getElementById('resultModal').style.display = "none";
+    }
+
+    window.onclick = function(event) {
+        const modal = document.getElementById('resultModal');
+        if (event.target == modal) closeModal();
     }
 
     // --- AUTOCOMPLETE LOGIK ---
-    const input = document.getElementById('guess-input');
+    const diagInput = document.getElementById('guess-input');
     const suggBox = document.getElementById('suggestions');
 
-    input.addEventListener('input', () => {
-        const val = input.value.toLowerCase();
+    diagInput.addEventListener('input', () => {
+        const val = diagInput.value.toLowerCase();
         suggBox.innerHTML = "";
         if(!val) return;
 
@@ -2107,7 +2136,7 @@
             div.className = 'suggestion';
             div.innerText = m;
             div.onclick = () => {
-                input.value = m;
+                diagInput.value = m;
                 suggBox.innerHTML = "";
             };
             suggBox.appendChild(div);
@@ -2115,16 +2144,16 @@
     });
 
     document.addEventListener('click', (e) => {
-        if(e.target !== input) suggBox.innerHTML = "";
+        if(e.target !== diagInput) suggBox.innerHTML = "";
     });
 
     function renderArchive() {
         const cont = document.getElementById('archive-content');
         cont.innerHTML = "";
-        puzzles.forEach(p => {
+        puzzles.slice().reverse().forEach(p => {
             const div = document.createElement('div');
             div.className = "archive-item";
-            div.innerHTML = `<span>#${p.id} - ${p.date}</span><button id="submit-btn" style="padding:5px 10px" onclick="initGameById(${p.id})">Spielen</button>`;
+            div.innerHTML = `<span>#${p.id} - ${p.date}</span><button id="submit-btn" style="padding:5px 10px; font-size: 0.8rem;" onclick="initGameById(${p.id})">Spielen</button>`;
             cont.appendChild(div);
         });
     }
@@ -2136,6 +2165,18 @@
     }
 
     loadDaily();
+
 </script>
+    <!-- Das Ergebnis-Popup -->
+<div id="resultModal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeModal()">&times;</span>
+        <h2 id="modal-title">Ergebnis</h2>
+        <div id="modal-body" class="stat-box"></div>
+        <p id="modal-solution" style="font-size: 1.1rem; font-weight: bold; color: var(--text-dark); margin-top: 10px;"></p>
+        <button onclick="closeModal()" style="background: var(--accent-brown); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-top: 15px;">Schließen</button>
+    </div>
+</div>
+
 </body>
 </html>

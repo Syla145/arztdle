@@ -67,6 +67,21 @@ body.dark .hint-box:nth-child(3) { background:#3d341e; border-color:#e8cc72; }
 body.dark .hint-box:nth-child(4) { background:#2a3d1e; border-color:#a8cc5a; }
 body.dark .hint-box:nth-child(5) { background:#1e3d22; border-color:#6bbf72; }
 body.dark .hint-box:nth-child(6) { background:#1a3d1e; border-color:#3aad4e; }
+
+        .streak-banner { font-size: 0.9rem; color: #e8a472; font-weight: bold; margin-bottom: 5px; min-height: 20px; }
+body.dark .streak-banner { color: #e8a472; }
+
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
+.stats-box { background: #f0f7ff; border-radius: 10px; padding: 20px 10px; text-align: center; }
+.stats-box .number { font-size: 2rem; font-weight: bold; color: #2a9d8f; }
+.stats-box .label { font-size: 0.8rem; color: #888; margin-top: 5px; text-transform: uppercase; letter-spacing: 1px; }
+body.dark .stats-box { background: #1a1a2e; }
+body.dark .stats-box .number { color: #2a9d8f; }
+
+        .countdown-box { margin-top: 25px; padding: 15px; background: #f0f7ff; border-radius: 10px; font-size: 0.9rem; color: #888; }
+.countdown-box .time { font-size: 1.8rem; font-weight: bold; color: #2a9d8f; margin-top: 5px; }
+body.dark .countdown-box { background: #1a1a2e; }
+body.dark .countdown-box .time { color: #2a9d8f; }
     </style>
 </head>
 <body>
@@ -74,6 +89,7 @@ body.dark .hint-box:nth-child(6) { background:#1a3d1e; border-color:#3aad4e; }
 <nav>
     <a onclick="showSection('play')">Heutiges Rätsel</a>
     <a onclick="showSection('archive')">Archiv</a>
+    <a onclick="showSection('stats')">Statistik</a>
     <a onclick="showSection('info')">Info</a>
     <button id="dark-mode-btn" onclick="toggleDark()">🌙</button>
 </nav>
@@ -82,6 +98,7 @@ body.dark .hint-box:nth-child(6) { background:#1a3d1e; border-color:#3aad4e; }
     <!-- SPIEL -->
     <div id="play" class="section active">
         <div class="header-info" id="meta-info">Arztdle #?? - DATUM</div>
+        <div class="streak-banner" id="streak-banner"></div>
         <h1 id="main-title">Was ist die Diagnose?</h1>
         <div id="hint-wrapper" class="hint-container"></div>
         
@@ -91,6 +108,10 @@ body.dark .hint-box:nth-child(6) { background:#1a3d1e; border-color:#3aad4e; }
             <button id="submit-btn" onclick="checkAnswer()">Absenden</button>
         </div>
         <div id="status-msg"></div>
+        <div class="countdown-box" id="countdown-box" style="display:none">
+    <div>Nächstes Rätsel in</div>
+    <div class="time" id="countdown-timer">--:--:--</div>
+</div>
     </div>
 
     <!-- ARCHIV -->
@@ -99,6 +120,12 @@ body.dark .hint-box:nth-child(6) { background:#1a3d1e; border-color:#3aad4e; }
         <div id="archive-content" class="archive-list"></div>
     </div>
 
+    <!-- STATISTIK -->
+<div id="stats" class="section">
+    <h1>Meine Statistik</h1>
+    <div id="stats-content"></div>
+</div>
+    
     <!-- INFO -->
     <div id="info" class="section">
         <h1>Über Arztdle DE</h1>
@@ -2238,8 +2265,9 @@ body.dark .hint-box:nth-child(6) { background:#1a3d1e; border-color:#3aad4e; }
         document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
         document.getElementById(id).classList.add('active');
         if(id === 'archive') renderArchive();
+        if(id === 'stats') renderStats();
     }
-
+    updateStreak(false);
     function loadDaily() {
     const now = new Date();
     const today = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
@@ -2289,6 +2317,10 @@ body.dark .hint-box:nth-child(6) { background:#1a3d1e; border-color:#3aad4e; }
     }
 
     usedGuesses.add(guess);
+        // Beim ersten Versuch zählen
+if (usedGuesses.size === 1) {
+    localStorage.setItem('statTotal', parseInt(localStorage.getItem('statTotal') || '0') + 1);
+}
 
     // Geratene Suggestion ausgrauen
     document.querySelectorAll('.suggestion').forEach(s => {
@@ -2300,6 +2332,10 @@ body.dark .hint-box:nth-child(6) { background:#1a3d1e; border-color:#3aad4e; }
 
     if (guess === solution) {
         msg.innerText = "Richtig! Hervorragende Diagnose. 🩺";
+        updateStreak(true);
+        startCountdown();
+        localStorage.setItem('statSolved', parseInt(localStorage.getItem('statSolved') || '0') + 1);
+        localStorage.setItem('statHints', parseInt(localStorage.getItem('statHints') || '0') + revealedCount);
         confetti({
     particleCount: 120,
     spread: 70,
@@ -2431,6 +2467,75 @@ input.addEventListener('keydown', (e) => {
 if (localStorage.getItem('darkMode') === 'true') {
     document.body.classList.add('dark');
     document.getElementById('dark-mode-btn').innerText = '☀️';
+}
+
+    function updateStreak(solved) {
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+    const lastPlayed = localStorage.getItem('lastPlayed');
+    let streak = parseInt(localStorage.getItem('streak') || '0');
+
+    if (solved) {
+        if (lastPlayed === today) {
+            // Heute schon gelöst, nichts ändern
+        } else {
+            const yesterday = new Date(now);
+            yesterday.setDate(yesterday.getDate() - 1);
+            const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth()+1).padStart(2,'0')}-${String(yesterday.getDate()).padStart(2,'0')}`;
+            if (lastPlayed === yesterdayStr) {
+                streak += 1;
+            } else {
+                streak = 1;
+            }
+            localStorage.setItem('streak', streak);
+            localStorage.setItem('lastPlayed', today);
+        }
+    }
+
+    const banner = document.getElementById('streak-banner');
+    if (streak > 0) {
+        banner.innerText = `🔥 ${streak} Tag${streak > 1 ? 'e' : ''} in Folge`;
+    } else {
+        banner.innerText = '';
+    }
+}
+    function renderStats() {
+    const total = parseInt(localStorage.getItem('statTotal') || '0');
+    const solved = parseInt(localStorage.getItem('statSolved') || '0');
+    const hintsTotal = parseInt(localStorage.getItem('statHints') || '0');
+    const streak = parseInt(localStorage.getItem('streak') || '0');
+    const rate = total > 0 ? Math.round((solved / total) * 100) : 0;
+    const avgHints = solved > 0 ? (hintsTotal / solved).toFixed(1) : '-';
+
+    document.getElementById('stats-content').innerHTML = `
+        <div class="stats-grid">
+            <div class="stats-box"><div class="number">${total}</div><div class="label">Gespielte Rätsel</div></div>
+            <div class="stats-box"><div class="number">${solved}</div><div class="label">Gelöst</div></div>
+            <div class="stats-box"><div class="number">${rate}%</div><div class="label">Erfolgsquote</div></div>
+            <div class="stats-box"><div class="number">${avgHints}</div><div class="label">Ø Hinweise</div></div>
+            <div class="stats-box" style="grid-column: span 2"><div class="number">🔥 ${streak}</div><div class="label">Aktuelle Streak</div></div>
+        </div>
+    `;
+}
+    function startCountdown() {
+    document.getElementById('countdown-box').style.display = 'block';
+    
+    function update() {
+        const now = new Date();
+        const tomorrow = new Date(now);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(0, 0, 0, 0);
+        
+        const diff = tomorrow - now;
+        const h = String(Math.floor(diff / 3600000)).padStart(2, '0');
+        const m = String(Math.floor((diff % 3600000) / 60000)).padStart(2, '0');
+        const s = String(Math.floor((diff % 60000) / 1000)).padStart(2, '0');
+        
+        document.getElementById('countdown-timer').innerText = `${h}:${m}:${s}`;
+    }
+    
+    update();
+    setInterval(update, 1000);
 }
 </script>
 </body>

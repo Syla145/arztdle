@@ -322,6 +322,39 @@
         }
         
         body.dark .modal-box { background: #16213e; color: #e0e0e0; }
+
+        .result-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.4);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .result-overlay.visible { display: flex; }
+        
+        .result-box {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 380px;
+            width: 90%;
+            text-align: center;
+            position: relative;
+        }
+        
+        .result-box .result-emoji { font-size: 3rem; margin-bottom: 10px; }
+        .result-box h2 { margin: 10px 0; font-size: 1.4rem; }
+        .result-box .result-solution { font-size: 1rem; color: #888; margin: 10px 0 20px 0; }
+        .result-box .result-attempts { font-size: 0.9rem; font-weight: bold; color: var(--accent); margin-bottom: 20px; }
+        .result-btn { background: var(--accent); color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem; }
+        .result-btn:hover { opacity: 0.9; }
+        
+        body.dark .result-box { background: #16213e; color: #e0e0e0; }
+        body.dark .result-box .result-solution { color: #aaa; }
     </style>
 </head>
 <body>
@@ -395,6 +428,16 @@
         </div>
     </div>
 
+    <div class="result-overlay" id="result-modal">
+    <div class="result-box">
+        <div class="result-emoji" id="result-emoji">🩺</div>
+        <h2 id="result-title"></h2>
+        <div class="result-solution" id="result-solution"></div>
+        <div class="result-attempts" id="result-attempts"></div>
+        <button class="result-btn" onclick="document.getElementById('result-modal').classList.remove('visible')">Schließen</button>
+    </div>
+</div>
+    
 <footer>
     <a onclick="document.getElementById('impressum-modal').classList.add('visible')">Impressum</a>
 </footer>
@@ -1799,6 +1842,7 @@
             localStorage.setItem('statSolved', parseInt(localStorage.getItem('statSolved') || '0') + 1);
             localStorage.setItem('statHints',  parseInt(localStorage.getItem('statHints')  || '0') + revealedCount);
             confetti({ particleCount: 120, spread: 70, origin: { y: 0.8 }, colors: ['#2a9d8f', '#3aad4e', '#6bbf72', '#e8cc72'] });
+            setTimeout(() => showResult(true, puzzles[currentPuzzleIndex].solution, revealedCount), 1500);
             for (let i = 0; i < 6; i++) {
                 const el = document.getElementById(`h-${i}`);
                 if (el) el.classList.add('visible');
@@ -1811,6 +1855,7 @@
                 msg.style.color = 'orange';
             } else {
                 msg.innerText   = `Leider nicht richtig. Die Lösung war: ${puzzles[currentPuzzleIndex].solution}`;
+                setTimeout(() => showResult(false, puzzles[currentPuzzleIndex].solution, revealedCount), 800);
                 msg.style.color = 'var(--error)';
             }
         }
@@ -1989,6 +2034,19 @@
     if (!event || event.target === modal) {
         modal.classList.remove('visible');
         }
+    }
+
+    // ===== Pop-Up =====
+    function showResult(correct, solution, attempts) {
+    document.getElementById('result-emoji').innerText  = correct ? '🎉' : '😔';
+    document.getElementById('result-title').innerText  = correct ? 'Richtig!' : 'Nicht geschafft';
+    document.getElementById('result-solution').innerText = correct
+        ? `Die Diagnose war: ${solution}`
+        : `Die richtige Diagnose war: ${solution}`;
+    document.getElementById('result-attempts').innerText = correct
+        ? `Geschafft auf Versuch ${attempts} von 6`
+        : `Du hast alle 6 Versuche aufgebraucht`;
+    document.getElementById('result-modal').classList.add('visible');
     }
 
 </script>

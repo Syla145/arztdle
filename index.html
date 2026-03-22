@@ -285,6 +285,43 @@
         footer a:hover { color: var(--accent); }
 
         body.dark footer { color: #666; }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.4);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-overlay.visible { display: flex; }
+        
+        .modal-box {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 400px;
+            width: 90%;
+            font-size: 0.85rem;
+            line-height: 1.8;
+            text-align: left;
+            position: relative;
+        }
+        
+        .modal-close {
+            position: absolute;
+            top: 12px; right: 16px;
+            background: none;
+            border: none;
+            font-size: 1.3rem;
+            cursor: pointer;
+            color: #999;
+        }
+        
+        body.dark .modal-box { background: #16213e; color: #e0e0e0; }
     </style>
 </head>
 <body>
@@ -330,23 +367,6 @@
         <h1>Meine Statistik</h1>
         <div id="stats-content"></div>
     </div>
-
-    <!-- IMPRESSUM -->
-    <div id="impressum" class="section">
-        <h1>Impressum</h1>
-        <p style="text-align: left; font-size: 0.9rem; line-height: 1.8;">
-            <strong>Angaben gemäß § 5 TMG</strong><br><br>
-            Josef Heininger<br>
-            Albert-Roßhaupter-Straße 109<br>
-            81369 München<br><br>
-            <strong>Kontakt</strong><br>
-            E-Mail: jhwindach@gmx.de<br><br>
-            <strong>Haftungsausschluss</strong><br>
-            Arztdle ist ein privates, nicht-kommerzielles Lernprojekt für Medizinstudierende. 
-            Die Inhalte stellen keine medizinische Beratung dar und ersetzen nicht den Besuch 
-            beim Arzt. Für die Richtigkeit der Inhalte wird keine Gewähr übernommen.
-        </p>
-    </div>
     
     <!-- INFO -->
     <div id="info" class="section">
@@ -360,8 +380,24 @@
 </div>
 
 <footer>
-    <a onclick="showSection('impressum')">Impressum</a>
+    <a onclick="document.getElementById('impressum-modal').classList.add('visible')">Impressum</a>
 </footer>
+
+    <div class="modal-overlay" id="impressum-modal" onclick="closeImpressum(event)">
+    <div class="modal-box">
+        <button class="modal-close" onclick="closeImpressum()">✕</button>
+        <h2 style="margin-top:0">Impressum</h2>
+        <strong>Angaben gemäß § 5 TMG</strong><br><br>
+        Josef Heininger<br>
+        Albert-Roßhaupter-Straße 109<br>
+        81369 München<br><br>
+        <strong>Kontakt</strong><br>
+        jhwindach@gmx.de<br><br>
+        <strong>Haftungsausschluss</strong><br>
+        Arztdle ist ein privates, nicht-kommerzielles Lernprojekt für Medizinstudierende.
+        Die Inhalte stellen keine medizinische Beratung dar und ersetzen nicht den Besuch beim Arzt.
+    </div>
+</div>
     
 <script>
 
@@ -1947,6 +1983,13 @@
     // ===== START =====
     updateStreak(false);
     loadDaily();
+
+    function closeImpressum(event) {
+    const modal = document.getElementById('impressum-modal');
+    if (!event || event.target === modal) {
+        modal.classList.remove('visible');
+        }
+    }
 
 </script>
 </body>

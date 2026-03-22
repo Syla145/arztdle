@@ -268,6 +268,23 @@
         body.dark .hint-box:nth-child(5)   { background: #1e3d22; border-color: #6bbf72; }
         body.dark .hint-box:nth-child(6)   { background: #1a3d1e; border-color: #3aad4e; }
 
+        footer {
+            text-align: center;
+            padding: 20px;
+            font-size: 0.75rem;
+            color: #999;
+            margin-top: 10px;
+        }
+
+        footer a {
+            color: #999;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+        footer a:hover { color: var(--accent); }
+
+        body.dark footer { color: #666; }
     </style>
 </head>
 <body>
@@ -314,16 +331,38 @@
         <div id="stats-content"></div>
     </div>
 
+    <!-- IMPRESSUM -->
+    <div id="impressum" class="section">
+        <h1>Impressum</h1>
+        <p style="text-align: left; font-size: 0.9rem; line-height: 1.8;">
+            <strong>Angaben gemäß § 5 TMG</strong><br><br>
+            Josef Heininger<br>
+            Albert-Roßhaupter-Straße 109<br>
+            81369 München<br><br>
+            <strong>Kontakt</strong><br>
+            E-Mail: jhwindach@gmx.de<br><br>
+            <strong>Haftungsausschluss</strong><br>
+            Arztdle ist ein privates, nicht-kommerzielles Lernprojekt für Medizinstudierende. 
+            Die Inhalte stellen keine medizinische Beratung dar und ersetzen nicht den Besuch 
+            beim Arzt. Für die Richtigkeit der Inhalte wird keine Gewähr übernommen.
+        </p>
+    </div>
+    
     <!-- INFO -->
     <div id="info" class="section">
         <h1>Über Arztdle DE</h1>
         <p>Dieses Tool hilft Medizinstudierenden, ihr diagnostisches Wissen zu trainieren.</p>
         <p>Jeden Tag erscheint ein neuer klinischer Fall. Viel Erfolg!</p>
         <p style="font-size: 0.8rem; color: #999;">Erstellt für eine angehende Ärztin. -A</p>
+    <div style="margin-top: 20px; padding: 15px; background: #fff3cd; border-radius: 10px; border-left: 5px solid #e8cc72; font-size: 0.85rem; text-align: left;">
+        ⚠️ <strong>Hinweis:</strong> Arztdle dient ausschließlich zu Lernzwecken für Medizinstudierende. Die Inhalte stellen keine medizinische Beratung dar und ersetzen nicht den Besuch beim Arzt.
     </div>
-
 </div>
 
+<footer>
+    <a onclick="showSection('impressum')">Impressum</a>
+</footer>
+    
 <script>
 
     // ===== DIAGNOSEN-LISTE =====

@@ -6,7 +6,20 @@
     <title>Arztdle - Täglich Medizin-Diagnosen erraten</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
-
+        /* ===== HANDY ===== */
+        @media (max-width: 500px) {
+            nav {
+                gap: 15px;
+                padding: 12px 10px;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+        
+            nav a {
+                font-size: 0.8rem;
+            }
+        }
+        
         /* ===== VARIABLEN ===== */
         :root {
             --bg-blue: #f0f7ff;
@@ -89,7 +102,7 @@
         }
 
         /* ===== HINWEISE ===== */
-        .hint-container { min-height: 300px; }
+        .hint-container { min-height: 100px; }
 
         .hint-box {
             border-radius: 10px;

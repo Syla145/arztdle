@@ -20,8 +20,8 @@
             }
         
             #dark-mode-btn {
-                position: static;
-                margin-left: 5px;
+                position: static !important;
+                order: 5;
             }
         }
         
@@ -423,12 +423,10 @@
     <div id="info" class="section">
         <h1>Über Arztdle </h1>
         <p>Dieses Tool hilft Medizinstudierenden, ihr diagnostisches Wissen zu trainieren.</p>
+        <p>Für jede Diagnose hast du 6 Tipps und somit 6 Versuche zeit.</p>
         <p>Jeden Tag erscheint ein neuer klinischer Fall. Viel Erfolg!</p>
         <p style="font-size: 0.8rem; color: #999;">Erstellt für eine angehende Ärztin. ~A</p>
-    <div style="margin-top: 20px; padding: 15px; background: #fff3cd; border-radius: 10px; border-left: 5px solid #e8cc72; font-size: 0.85rem; text-align: left;">
-        ⚠️ <strong>Hinweis:</strong> Arztdle dient ausschließlich zu Lernzwecken für Medizinstudierende. Die Inhalte stellen keine medizinische Beratung dar und ersetzen nicht den Besuch beim Arzt.
     </div>
-</div>
 </div>
     <div class="modal-overlay" id="impressum-modal" onclick="closeImpressum(event)">
         <div class="modal-box">
@@ -455,6 +453,10 @@
         <button class="result-btn" onclick="document.getElementById('result-modal').classList.remove('visible')">Schließen</button>
     </div>
 </div>
+    
+    <div style="margin-top: 20px; padding: 15px; background: #fff3cd; border-radius: 10px; border-left: 5px solid #e8cc72; font-size: 0.85rem; text-align: left;">
+        ⚠️ <strong>Hinweis:</strong> Arztdle dient ausschließlich zu Lernzwecken für Medizinstudierende. Die Inhalte stellen keine medizinische Beratung dar und ersetzen nicht den Besuch beim Arzt.
+    </div>
     
 <footer>
     <a onclick="document.getElementById('impressum-modal').classList.add('visible')">Impressum</a>

@@ -2335,12 +2335,18 @@ input.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowDown') {
         e.preventDefault();
         selectedIndex = Math.min(selectedIndex + 1, suggestions.length - 1);
-        suggestions.forEach((s, i) => s.style.background = i === selectedIndex ? '#f0f0f0' : '');
+        suggestions.forEach((s, i) => {
+    s.style.background = i === selectedIndex ? '#f0f0f0' : '';
+    if (i === selectedIndex) s.scrollIntoView({ block: 'nearest' });
+});
     } 
     else if (e.key === 'ArrowUp') {
         e.preventDefault();
         selectedIndex = Math.max(selectedIndex - 1, -1);
-        suggestions.forEach((s, i) => s.style.background = i === selectedIndex ? '#f0f0f0' : '');
+        suggestions.forEach((s, i) => {
+    s.style.background = i === selectedIndex ? '#f0f0f0' : '';
+    if (i === selectedIndex) s.scrollIntoView({ block: 'nearest' });
+});
     } 
     else if (e.key === 'Enter') {
         if (selectedIndex >= 0 && suggestions[selectedIndex]) {

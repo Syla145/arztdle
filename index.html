@@ -2327,7 +2327,10 @@ body.dark .hint-box:nth-child(6) { background:#1a3d1e; border-color:#3aad4e; }
     // --- AUTOCOMPLETE LOGIK ---
     const input = document.getElementById('guess-input');
     input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') checkAnswer();
+    if (e.key === 'Enter') {
+        suggBox.innerHTML = "";
+        checkAnswer();
+    }
 });
     const suggBox = document.getElementById('suggestions');
 
@@ -2347,10 +2350,11 @@ body.dark .hint-box:nth-child(6) { background:#1a3d1e; border-color:#3aad4e; }
             div.style.pointerEvents = "none";
         }
         div.onclick = () => {
-            if (alreadyUsed) return;
-            input.value = m;
-            suggBox.innerHTML = "";
-        };
+    if (alreadyUsed) return;
+    input.value = m;
+    suggBox.innerHTML = "";
+    input.focus();
+};
         suggBox.appendChild(div);
     });
 });

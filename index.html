@@ -2208,19 +2208,17 @@
     }
 
     function loadDaily() {
-    const today = new Date().toISOString().split('T')[0];
-    let puzzle = puzzles.find(p => p.date === today);
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
     
+    let puzzle = puzzles.find(p => p.date === today);
     if (!puzzle) {
-        // Zeige das aktuellste Rätsel, das nicht in der Zukunft liegt
         const past = puzzles.filter(p => p.date <= today);
         puzzle = past[past.length - 1];
     }
-    
-    if (!puzzle) puzzle = puzzles[0]; // Absoluter Fallback
+    if (!puzzle) puzzle = puzzles[0];
     initGame(puzzle);
 }
-
     function initGame(puzzle) {
         revealedCount = 1;
         document.getElementById('meta-info').innerText = `Arztdle #${puzzle.id} - ${puzzle.date}`;
@@ -2293,16 +2291,22 @@
         if(e.target !== input) suggBox.innerHTML = "";
     });
 
-    function renderArchive() {
-        const cont = document.getElementById('archive-content');
-        cont.innerHTML = "";
-        puzzles.forEach(p => {
+   function renderArchive() {
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+    
+    const cont = document.getElementById('archive-content');
+    cont.innerHTML = "";
+    
+    puzzles
+        .filter(p => p.date <= today)  // nur vergangene + heutige
+        .forEach(p => {
             const div = document.createElement('div');
             div.className = "archive-item";
             div.innerHTML = `<span>#${p.id} - ${p.date}</span><button id="submit-btn" style="padding:5px 10px" onclick="initGameById(${p.id})">Spielen</button>`;
             cont.appendChild(div);
         });
-    }
+}
 
     function initGameById(id) {
         const p = puzzles.find(x => x.id === id);

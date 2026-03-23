@@ -392,6 +392,19 @@
     <button id="dark-mode-btn" onclick="toggleDark()">🌙</button>
 </nav>
 
+<div id="auth-modal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeAuth()">&times;</span>
+        <h2 id="auth-title">Anmelden für Leaderboard</h2>
+        <input type="email" id="auth-email" placeholder="E-Mail">
+        <input type="password" id="auth-pw" placeholder="Passwort">
+        <button onclick="handleAuth()">Bestätigen</button>
+        <p onclick="toggleAuthMode()" id="auth-switch" style="cursor:pointer; font-size: 0.8rem;">
+            Noch kein Konto? Hier registrieren.
+        </p>
+    </div>
+</div>
+    
 <!-- ===== HAUPTCONTAINER ===== -->
 <div class="container">
 
@@ -2287,6 +2300,48 @@ async function renderLeaderboard() {
     updateStreak(false);
     loadDaily();
 
+    let currentUser = null;
+
+// Wird beim Laden der Seite aufgerufen
+async function checkUser() {
+    const { data: { user } } = await sb.auth.getUser();
+    currentUser = user;
+    if (user) {
+        // Wenn eingeloggt, Namen aus DB ziehen und Stats laden
+        restoreStatsFromCloud(user.id);
+    }
+}
+
+    let isSignUp = false;
+
+async function handleAuth() {
+    const email = document.getElementById('auth-email').value;
+    const password = document.getElementById('auth-pw').value;
+
+    if (isSignUp) {
+        const { data, error } = await sb.auth.signUp({ email, password });
+        if (error) alert(error.message);
+        else alert("Registrierung erfolgreich!");
+    } else {
+        const { data, error } = await sb.auth.signInWithPassword({ email, password });
+        if (error) alert(error.message);
+        else {
+            currentUser = data.user;
+            location.reload(); // Refresh um Stats zu laden
+        }
+    }
+}
+
+    function openLeaderboard() {
+    if (!currentUser) {
+        // Zeige Login-Modal, wenn nicht eingeloggt
+        document.getElementById('auth-modal').classList.add('visible');
+    } else {
+        // Zeige Leaderboard-Modal
+        document.getElementById('leaderboard-modal').classList.add('visible');
+        renderLeaderboard();
+    }
+}
 </script>
 </body>
 </html>

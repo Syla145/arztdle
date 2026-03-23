@@ -308,6 +308,41 @@
             color: #999;
         }
 
+        /* ===== AUTH MODAL ===== */
+        .auth-modal-box {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 350px;
+            width: 90%;
+            text-align: center;
+            position: relative;
+        }
+
+        .auth-modal-box input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .auth-modal-box .auth-btn {
+            width: 100%;
+            margin-top: 10px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .auth-modal-box .auth-btn:hover { opacity: 0.9; }
+
         .result-overlay {
             display: none;
             position: fixed;
@@ -339,6 +374,19 @@
         .result-btn { background: var(--accent); color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem; }
         .result-btn:hover { opacity: 0.9; }
 
+        /* ===== LEADERBOARD NAME INPUT ===== */
+        #leaderboard-name-input { max-width: 200px; }
+        #leaderboard-save-btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        #leaderboard-save-btn:hover { opacity: 0.9; }
+
         /* ===== DARK MODE ===== */
         body.dark                           { background: #1a1a2e; color: #e0e0e0; }
         body.dark .container                { background: #16213e; box-shadow: 0 8px 30px rgba(0,0,0,0.4); }
@@ -357,6 +405,7 @@
         body.dark .streak-banner            { color: #e8a472; }
         body.dark footer                    { color: #666; }
         body.dark .modal-box                { background: #16213e; color: #e0e0e0; }
+        body.dark .auth-modal-box           { background: #16213e; color: #e0e0e0; }
         body.dark .result-box               { background: #16213e; color: #e0e0e0; }
         body.dark .result-box .result-solution { color: #aaa; }
 
@@ -392,19 +441,23 @@
     <button id="dark-mode-btn" onclick="toggleDark()">🌙</button>
 </nav>
 
-<div id="auth-modal" class="modal">
-    <div class="modal-content">
-        <span class="close" onclick="closeAuth()">&times;</span>
-        <h2 id="auth-title">Anmelden für Leaderboard</h2>
+<!-- ===== AUTH MODAL (nur einmal, mit korrektem CSS) ===== -->
+<div class="modal-overlay" id="auth-modal" onclick="closeAuthOnOverlay(event)">
+    <div class="auth-modal-box">
+        <button class="modal-close" onclick="closeAuth()">✕</button>
+        <h2 id="auth-title">Leaderboard Login</h2>
+        <p id="auth-desc" style="font-size: 0.85rem; color: #666; margin-bottom: 20px;">
+            Erstelle ein Konto, um deine Stats dauerhaft zu speichern.
+        </p>
         <input type="email" id="auth-email" placeholder="E-Mail">
-        <input type="password" id="auth-pw" placeholder="Passwort">
-        <button onclick="handleAuth()">Bestätigen</button>
-        <p onclick="toggleAuthMode()" id="auth-switch" style="cursor:pointer; font-size: 0.8rem;">
-            Noch kein Konto? Hier registrieren.
+        <input type="password" id="auth-pw" placeholder="Passwort (mind. 6 Zeichen)">
+        <button onclick="handleAuth()" id="auth-submit-btn" class="auth-btn">Anmelden</button>
+        <p id="auth-switch" onclick="toggleAuthMode()" style="margin-top:20px; font-size: 0.8rem; color: var(--accent); cursor: pointer; text-decoration: underline;">
+            Noch kein Konto? Hier registrieren
         </p>
     </div>
 </div>
-    
+
 <!-- ===== HAUPTCONTAINER ===== -->
 <div class="container">
 
@@ -441,11 +494,18 @@
     <!-- LEADERBOARD -->
     <div id="leaderboard" class="section">
         <h1>🏆 Bestenliste</h1>
-        <div id="leaderboard-name-area" style="margin-bottom:20px">
+        <div id="leaderboard-auth-prompt" style="display:none; margin-bottom:20px;">
+            <p style="font-size:0.9rem;color:#888">Melde dich an, um auf der Bestenliste zu erscheinen.</p>
+            <button onclick="document.getElementById('auth-modal').classList.add('visible')"
+                style="background:var(--accent);color:white;border:none;padding:10px 20px;border-radius:8px;font-weight:bold;cursor:pointer;">
+                Anmelden / Registrieren
+            </button>
+        </div>
+        <div id="leaderboard-name-area" style="display:none; margin-bottom:20px;">
             <p style="font-size:0.9rem;color:#888">Gib deinen Namen ein, um auf der Bestenliste zu erscheinen:</p>
             <div style="display:flex;gap:10px;justify-content:center">
-                <input type="text" id="leaderboard-name-input" placeholder="Dein Name..." style="max-width:200px" autocomplete="off">
-                <button onclick="saveLeaderboardName()" style="background:var(--accent);color:white;border:none;padding:10px 20px;border-radius:8px;font-weight:bold;cursor:pointer;">Speichern</button>
+                <input type="text" id="leaderboard-name-input" placeholder="Dein Name..." autocomplete="off">
+                <button id="leaderboard-save-btn" onclick="saveLeaderboardName()">Speichern</button>
             </div>
             <div id="leaderboard-current-name" style="margin-top:10px;font-size:0.85rem;color:#888"></div>
         </div>
@@ -491,27 +551,8 @@
 </div>
 
 <!-- ===== WARNHINWEIS ===== -->
-<div class="warning-hint" style="margin-top: 20px; padding: 15px; border-radius: 10px; border-left: 5px solid #e8cc72; font-size: 0.85rem; text-align: center;">
+<div class="warning-hint" style="max-width:500px;margin:0 auto 20px auto;padding:15px;border-radius:10px;border-left:5px solid #e8cc72;font-size:0.85rem;text-align:center;">
     ⚠️ <strong>Hinweis:</strong> Arztdle dient ausschließlich zu Lernzwecken für Medizinstudierende. Die Inhalte stellen keine medizinische Beratung dar und ersetzen nicht den Besuch beim Arzt.
-</div>
-
-    <div id="auth-modal" class="modal">
-    <div class="modal-content" style="max-width: 350px; text-align: center;">
-        <span class="close" onclick="closeAuth()">&times;</span>
-        <h2 id="auth-title">Leaderboard Login</h2>
-        <p id="auth-desc" style="font-size: 0.85rem; color: #666; margin-bottom: 20px;">
-            Erstelle ein Konto, um deine Stats dauerhaft zu speichern.
-        </p>
-        
-        <input type="email" id="auth-email" placeholder="E-Mail" style="width:100%; padding:10px; margin-bottom:10px; border:1px solid #ddd; border-radius:5px;">
-        <input type="password" id="auth-pw" placeholder="Passwort" style="width:100%; padding:10px; margin-bottom:10px; border:1px solid #ddd; border-radius:5px;">
-        
-        <button onclick="handleAuth()" id="auth-submit-btn" class="btn" style="width:100%; margin-top:10px;">Anmelden</button>
-        
-        <p id="auth-switch" onclick="toggleAuthMode()" style="margin-top:20px; font-size: 0.8rem; color: var(--accent); cursor: pointer; text-decoration: underline;">
-            Noch kein Konto? Hier registrieren
-        </p>
-    </div>
 </div>
 
 <footer>
@@ -522,12 +563,15 @@
     // ===== SUPABASE INITIALISIERUNG =====
     const SUPABASE_URL = 'https://tyxbabxjjrcqarqxmgoc.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR5eGJhYnhqanJjcWFycXhtZ29jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyNTcyODQsImV4cCI6MjA4OTgzMzI4NH0.4Tz5zSIClabWP6Q3RbhuRmdxvENAEV1mI3mZYczjOSw';
-    
-    // WICHTIG: Die Variable heißt jetzt "sb" statt "supabase"
     const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     
     // ===== DIAGNOSEN-LISTE =====
+    // FIXES:
+    // - "Metabolisches Syndrom" hinzugefügt (Lösung von Puzzle #66)
+    // - "Anaphylaktischer Schock" hinzugefügt (Lösung von Puzzle #53)
+    // - "Malignes Melanom" hinzugefügt (Lösung von Puzzle #38)
+    // - "Akutes Glaukom" hinzugefügt (Lösung von Puzzle #24)
     const allDiagnoses = [
         "5α-Reduktase-Mangel", "Abdominelles Aortenaneurysma", "Abduzensparese",
         "Abhängige Persönlichkeitsstörung", "Absenz-Epilepsie", "Abszess",
@@ -549,6 +593,7 @@
         "Akute Sinusitis", "Akute Tonsillitis", "Akute Tubulusnekrose (ATN)",
         "Akute Zystitis", "Akutes Abdomen", "Akutes Atemnotsyndrom (ARDS)",
         "Akutes Koronarsyndrom", "Akutes Lungenödem", "Akutes Nierenversagen",
+        "Akutes Glaukom",
         "Albinismus", "Alkoholentzug", "Alkoholgebrauchsstörung", "Alkoholintoxikation",
         "Alkoholische Hepatitis", "Alkoholische Leberzirrhose", "Alkoholkrankheit",
         "Allergie", "Allergische bronchopulmonale Aspergillose (ABPA)",
@@ -557,7 +602,8 @@
         "Alport-Syndrom", "Alzheimer-Demenz", "Alzheimer-Krankheit", "Amöbenruhr",
         "Amphetaminentzug", "Amphetaminintoxikation", "Amyloidose",
         "Amyotrophe Lateralsklerose (ALS)", "Anämie", "Anämie bei chronischer Erkrankung",
-        "Analfissur", "Anaphylaxie", "Anaplasmose", "Anaplastisches Schilddrüsenkarzinom",
+        "Analfissur", "Anaphylaxie", "Anaphylaktischer Schock", "Anaplasmose",
+        "Anaplastisches Schilddrüsenkarzinom",
         "Androgeninsensitivitätssyndrom", "Anenzephalie", "Angelman-Syndrom",
         "Angina pectoris", "Angiodysplasie", "Angiosarkom",
         "Ankylosierende Spondylitis (Morbus Bechterew)",
@@ -786,12 +832,12 @@
         "Linksventrikuläre Hypertrophie (LVH)", "Linsenluxation", "Lipom", "Lissenzephalie",
         "Listeria-monocytogenes-Infektion", "Lithiumtoxizität", "Loa-loa-Filariose",
         "Lobuläres Karzinom in situ (LCIS)", "LSD-Intoxikation", "Ludwig-Angina",
-        "Lumbaler Bandscheibenvorfall", "Lungenabszess", "Lungenembolie (LE)",
+        "Lumbarer Bandscheibenvorfall", "Lungenabszess", "Lungenembolie (LE)",
         "Lungenentzündung", "Lungenkontusion", "Lupus erythematodes", "Luxation",
         "Lyme-Borreliose (Borrelia burgdorferi)", "Lymphatische Filariose (Wuchereria bancrofti)",
         "Lynch-Syndrom (HNPCC)", "Magenkarzinom", "Major Depression (MDD)",
         "Major Depression mit psychotischen Merkmalen", "Makroangiopathische hämolytische Anämie",
-        "Malaria", "Maligne Hyperthermie", "Malignes neuroleptisches Syndrom (MNS)",
+        "Malaria", "Maligne Hyperthermie", "Malignes Melanom", "Malignes neuroleptisches Syndrom (MNS)",
         "Mallory-Weiss-Syndrom", "Malrotation des Darms", "Mammakarzinom", "Manische Episode",
         "Mantelzell-Lymphom", "Marcus-Gunn-Pupille (Relatives afferentes Pupillendefizit)",
         "Marginalzonenlymphom", "Masern", "Mayer-Rokitansky-Küster-Hauser-Syndrom",
@@ -804,6 +850,7 @@
         "Membranoproliferative Glomerulonephritis", "MEN1", "MEN2A", "MEN2B", "Meningeom",
         "Meningitis", "Meningozele", "Menopause", "Mesotheliom",
         "Metabolisch assoziierte Fettlebererkrankung (MAFLD)",
+        "Metabolisches Syndrom",
         "Metachromatische Leukodystrophie (MLD)", "Migräne",
         "Mikroangiopathische hämolytische Anämie", "Mikroskopische Kolitis",
         "Mikroskopische Polyangiitis (MPA)", "Miller-Fisher-Syndrom", "Milzabszess",
@@ -1095,7 +1142,7 @@
             'Die neurologische Untersuchung zeigt eine Hemiparese.',
             'Die Bildgebung zeigt eine ischämische Läsion im Gehirn.'
         ]},
-        { id: 11, date: '2026-01-11', solution: 'Lungenembolie', hints: [
+        { id: 11, date: '2026-01-11', solution: 'Lungenembolie (LE)', hints: [
             'Eine 46-jährige Frau stellt sich mit plötzlich einsetzender Atemnot vor.',
             'Sie berichtet über stechende Schmerzen im Brustkorb beim Einatmen.',
             'Die Beschwerden begannen wenige Tage nach einer längeren Flugreise.',
@@ -1191,7 +1238,7 @@
             'Die Laboruntersuchung zeigt mikrozytäre, hypochrome Erythrozyten.',
             'Das Ferritin ist deutlich erniedrigt.'
         ]},
-        { id: 23, date: '2026-01-23', solution: 'Tiefe Venenthrombose', hints: [
+        { id: 23, date: '2026-01-23', solution: 'Tiefe Venenthrombose (TVT)', hints: [
             'Ein 55-jähriger Mann klagt über Schmerzen im linken Unterschenkel.',
             'Das Bein ist geschwollen und fühlt sich warm an.',
             'Die Beschwerden traten nach längerer Immobilisation auf.',
@@ -1239,7 +1286,7 @@
             'Der Ausschlag breitet sich über den Körper aus.',
             'Die Klinik ist typisch für eine virale Kinderkrankheit.'
         ]},
-        { id: 29, date: '2026-01-29', solution: 'Mumps', hints: [
+        { id: 29, date: '2026-01-29', solution: 'Mumps (Paramyxovirus)', hints: [
             'Ein 10-jähriges Kind stellt sich mit Fieber vor.',
             'Es klagt über Schmerzen beim Kauen.',
             'Die Wangenregion wirkt geschwollen.',
@@ -1303,7 +1350,7 @@
             'Beim Abkratzen zeigen sich silbrig glänzende Schuppen.',
             'Es zeigt sich das typische Auspitz-Phänomen.'
         ]},
-        { id: 37, date: '2026-02-06', solution: 'Neurodermitis', hints: [
+        { id: 37, date: '2026-02-06', solution: 'Neurodermitis (Atopische Dermatitis)', hints: [
             'Ein 20-jähriger Patient klagt über starken Juckreiz.',
             'Die Haut ist trocken und gerötet.',
             'Die Veränderungen befinden sich vor allem in den Beugen.',
@@ -1391,7 +1438,7 @@
             'Die neurologische Untersuchung ist weitgehend unauffällig.',
             'Die Beschwerden folgen dem Verlauf des Ischiasnervs.'
         ]},
-        { id: 48, date: '2026-02-17', solution: 'Herpes zoster', hints: [
+        { id: 48, date: '2026-02-17', solution: 'Gürtelrose (Herpes zoster)', hints: [
             'Ein 60-jähriger Patient klagt über brennende Schmerzen an der Brust.',
             'Die Schmerzen bestehen seit einigen Tagen.',
             'Nun treten kleine Bläschen auf der Haut auf.',
@@ -1463,7 +1510,7 @@
             'Vor Beginn berichtet sie über visuelle Störungen.',
             'Die Symptome sind typisch für eine primäre Kopfschmerzerkrankung.'
         ]},
-        { id: 57, date: '2026-02-26', solution: 'Cluster-Kopfschmerz', hints: [
+        { id: 57, date: '2026-02-26', solution: 'Clusterkopfschmerz', hints: [
             'Ein 35-jähriger Mann klagt über extrem starke Kopfschmerzen.',
             'Die Schmerzen treten einseitig im Bereich des Auges auf.',
             'Die Attacken dauern etwa 30–60 Minuten.',
@@ -1623,7 +1670,7 @@
             'Die Stellung des Gelenks ist unphysiologisch.',
             'Die Diagnose ist eine Ausrenkung eines Gelenks.'
         ]},
-        { id: 77, date: '2026-03-18', solution: 'Achillessehnenruptur', hints: [
+        { id: 77, date: '2026-03-18', solution: 'Sehnenruptur', hints: [
             'Ein 40-jähriger Mann verspürt beim Sport plötzlich einen starken Schmerz in der Wade.',
             'Er beschreibt ein Gefühl wie einen Schlag von hinten.',
             'Das Gehen ist nur eingeschränkt möglich.',
@@ -1735,7 +1782,7 @@
             'Die Gallenblase ist tastbar vergrößert und schmerzlos.',
             'Die Bildgebung zeigt eine Raumforderung im Pankreaskopf.'
         ]},
-        { id: 91, date: '2026-04-01', solution: 'Subarachnoidalblutung', hints: [
+        { id: 91, date: '2026-04-01', solution: 'Subarachnoidalblutung (SAB)', hints: [
             'Ein 50-jähriger Mann klagt über den schlimmsten Kopfschmerz seines Lebens.',
             'Der Schmerz trat schlagartig auf.',
             'Er berichtet über kurzzeitigen Bewusstseinsverlust.',
@@ -1831,6 +1878,7 @@
     let revealedCount      = 1;
     let usedGuesses        = new Set();
     let dailyFinished      = false;
+    let currentUser        = null;
 
     // ===== DOM-REFERENZEN =====
     const input   = document.getElementById('guess-input');
@@ -1847,23 +1895,23 @@
 
     // ===== FORTSCHRITT SPEICHERN =====
     function saveDailyProgress(finished, solved) {
-    localStorage.setItem('dailyProgress', JSON.stringify({
-        date:          getToday(),
-        revealedCount: revealedCount,
-        usedGuesses:   [...usedGuesses],
-        finished:      finished,
-        solved:        solved
-    }));
+        localStorage.setItem('dailyProgress', JSON.stringify({
+            date:          getToday(),
+            revealedCount: revealedCount,
+            usedGuesses:   [...usedGuesses],
+            finished:      finished,
+            solved:        solved
+        }));
 
         if (finished) {
             const done = JSON.parse(localStorage.getItem('completedPuzzles') || '{}');
-            done[puzzles[currentPuzzleIndex].id]                        = solved ? 'solved' : 'failed';
-            done[puzzles[currentPuzzleIndex].id + '_attempts']          = revealedCount;
+            done[puzzles[currentPuzzleIndex].id]               = solved ? 'solved' : 'failed';
+            done[puzzles[currentPuzzleIndex].id + '_attempts'] = revealedCount;
             localStorage.setItem('completedPuzzles', JSON.stringify(done));
 
-            // Leaderboard automatisch aktualisieren falls Name vorhanden
+            // Leaderboard automatisch aktualisieren falls eingeloggt und Name vorhanden
             const lbName = localStorage.getItem('leaderboardName');
-            if (finished && lbName) pushLeaderboardEntry(lbName);
+            if (lbName && currentUser) pushLeaderboardEntry(lbName);
         }
     }
 
@@ -1872,9 +1920,9 @@
     function showSection(id) {
         document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
         document.getElementById(id).classList.add('active');
-        if (id === 'archive') renderArchive();
-        if (id === 'stats')   renderStats();
-        if (id === 'play')    loadDaily();
+        if (id === 'archive')     renderArchive();
+        if (id === 'stats')       renderStats();
+        if (id === 'play')        loadDaily();
         if (id === 'leaderboard') renderLeaderboard();
     }
 
@@ -1895,7 +1943,6 @@
         initGame(puzzle);
 
         if (saved && saved.date === today) {
-            // Fortschritt wiederherstellen
             revealedCount = saved.revealedCount;
             usedGuesses   = new Set(saved.usedGuesses);
             dailyFinished = saved.finished;
@@ -1915,8 +1962,6 @@
                     msg.style.color = 'var(--error)';
                 }
                 startCountdown();
-                
-                checkUser();
             }
         }
     }
@@ -1946,6 +1991,7 @@
         });
 
         currentPuzzleIndex = puzzles.indexOf(puzzle);
+        updateStreakBanner();
     }
 
 
@@ -2004,6 +2050,7 @@
                 msg.style.color = 'var(--error)';
                 dailyFinished   = true;
                 saveDailyProgress(true, false);
+                updateStreak(false);
                 setTimeout(() => showResult(false, puzzles[currentPuzzleIndex].solution, revealedCount), 800);
             }
         }
@@ -2100,17 +2147,15 @@
     }
 
     function initGameById(id) {
-    const p = puzzles.find(x => x.id === id);
-    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-    document.getElementById('play').classList.add('active');
-    initGame(p);
+        const p = puzzles.find(x => x.id === id);
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.getElementById('play').classList.add('active');
+        initGame(p);
 
-        // Prüfen ob bereits abgeschlossen
         const done   = JSON.parse(localStorage.getItem('completedPuzzles') || '{}');
         const status = done[id];
         if (status) {
-            const msg = document.getElementById('status-msg');
-            // Wie viele Hinweise wurden damals gezeigt?
+            const msg      = document.getElementById('status-msg');
             const attempts = done[id + '_attempts'] || '?';
             if (status === 'solved') {
                 msg.innerHTML   = `Du hast dieses Rätsel bereits in ${attempts} Versuch${attempts !== 1 ? 'en' : ''} gelöst. 🩺<br><span style="font-weight:normal;font-size:0.9rem;color:#888">Die Lösung war: ${p.solution}</span>`;
@@ -2119,7 +2164,6 @@
                 msg.innerHTML   = `Du hast dieses Rätsel leider nicht geschafft.<br><span style="font-weight:normal;font-size:0.9rem;color:#888">Die Lösung war: ${p.solution}</span>`;
                 msg.style.color = 'var(--error)';
             }
-            // Alle Hinweise anzeigen und Eingabe sperren
             for (let i = 0; i < p.hints.length; i++) {
                 const el = document.getElementById(`h-${i}`);
                 if (el) el.classList.add('visible');
@@ -2165,7 +2209,12 @@
             localStorage.setItem('lastPlayed', today);
         }
 
-        const banner     = document.getElementById('streak-banner');
+        updateStreakBanner();
+    }
+
+    function updateStreakBanner() {
+        const streak = parseInt(localStorage.getItem('streak') || '0');
+        const banner = document.getElementById('streak-banner');
         banner.innerText = streak > 0 ? `🔥 ${streak} Tag${streak > 1 ? 'e' : ''} in Folge` : '';
     }
 
@@ -2173,6 +2222,8 @@
     // ===== COUNTDOWN =====
     function startCountdown() {
         document.getElementById('countdown-box').style.display = 'block';
+        document.getElementById('guess-input').disabled = true;
+        document.getElementById('submit-btn').disabled  = true;
         function update() {
             const now      = new Date();
             const tomorrow = new Date(now);
@@ -2224,94 +2275,186 @@
     }
 
 
-    // ===== NEUE LEADERBOARD FUNKTIONEN =====
-    
+    // ===== AUTH MODAL =====
     let isSignUpMode = false;
-let currentUser = null;
 
-// Prüfen, ob User eingeloggt ist (beim Start)
-async function checkUser() {
-    const { data: { user } } = await sb.auth.getUser();
-    currentUser = user;
-    if (user) {
-        // Falls eingeloggt, Leaderboard-Name aus DB laden falls nicht im LocalStorage
-        if (!localStorage.getItem('leaderboardName')) {
-            const { data } = await sb.from('leaderboard').select('name').eq('user_id', user.id).single();
-            if (data) localStorage.setItem('leaderboardName', data.name);
+    function closeAuth() {
+        document.getElementById('auth-modal').classList.remove('visible');
+    }
+
+    function closeAuthOnOverlay(event) {
+        if (event.target === document.getElementById('auth-modal')) closeAuth();
+    }
+
+    function toggleAuthMode() {
+        isSignUpMode = !isSignUpMode;
+        document.getElementById('auth-title').innerText      = isSignUpMode ? 'Registrieren' : 'Leaderboard Login';
+        document.getElementById('auth-submit-btn').innerText = isSignUpMode ? 'Konto erstellen' : 'Anmelden';
+        document.getElementById('auth-switch').innerText     = isSignUpMode
+            ? 'Schon ein Konto? Hier einloggen'
+            : 'Noch kein Konto? Hier registrieren';
+    }
+
+    async function handleAuth() {
+        const email    = document.getElementById('auth-email').value.trim();
+        const password = document.getElementById('auth-pw').value;
+
+        if (!email || !password) return alert('Bitte E-Mail und Passwort eingeben.');
+        if (password.length < 6)  return alert('Passwort muss mindestens 6 Zeichen lang sein.');
+
+        try {
+            if (isSignUpMode) {
+                const { error } = await sb.auth.signUp({ email, password });
+                if (error) throw error;
+                alert('Erfolgreich registriert! Du kannst dich jetzt einloggen.');
+                toggleAuthMode();
+            } else {
+                const { data, error } = await sb.auth.signInWithPassword({ email, password });
+                if (error) throw error;
+                currentUser = data.user;
+                closeAuth();
+                renderLeaderboard(); // Leaderboard neu rendern nach Login
+            }
+        } catch (e) {
+            alert('Fehler: ' + e.message);
         }
     }
-}
 
-// Modal öffnen/schließen
-function closeAuth() { document.getElementById('auth-modal').classList.remove('visible'); }
-function toggleAuthMode() {
-    isSignUpMode = !isSignUpMode;
-    document.getElementById('auth-title').innerText = isSignUpMode ? "Registrieren" : "Anmelden";
-    document.getElementById('auth-submit-btn').innerText = isSignUpMode ? "Konto erstellen" : "Anmelden";
-    document.getElementById('auth-switch').innerText = isSignUpMode ? "Schon ein Konto? Hier einloggen" : "Noch kein Konto? Hier registrieren";
-}
 
-// Login oder Registrierung ausführen
-async function handleAuth() {
-    const email = document.getElementById('auth-email').value;
-    const password = document.getElementById('auth-pw').value;
-    
-    if (password.length < 6) return alert("Passwort muss mindestens 6 Zeichen lang sein.");
+    // ===== LEADERBOARD =====
 
-    try {
-        if (isSignUpMode) {
-            const { error } = await sb.auth.signUp({ email, password });
+    // FIX: checkUser() wird jetzt beim Seitenstart aufgerufen
+    async function checkUser() {
+        try {
+            const { data: { user } } = await sb.auth.getUser();
+            currentUser = user;
+            if (user && !localStorage.getItem('leaderboardName')) {
+                const { data } = await sb.from('leaderboard').select('name').eq('user_id', user.id).maybeSingle();
+                if (data) localStorage.setItem('leaderboardName', data.name);
+            }
+        } catch(e) {
+            console.warn('Supabase auth check failed:', e);
+        }
+    }
+
+    // FIX: saveLeaderboardName() war komplett fehlend
+    async function saveLeaderboardName() {
+        const nameInput = document.getElementById('leaderboard-name-input');
+        const name      = nameInput.value.trim();
+        if (!name) return alert('Bitte gib einen Namen ein.');
+        if (!currentUser) {
+            document.getElementById('auth-modal').classList.add('visible');
+            return;
+        }
+        localStorage.setItem('leaderboardName', name);
+        document.getElementById('leaderboard-current-name').innerText = `Dein Name: ${name}`;
+        nameInput.value = '';
+        await pushLeaderboardEntry(name);
+        await renderLeaderboard();
+    }
+
+    async function pushLeaderboardEntry(name) {
+        if (!currentUser) return;
+
+        const total    = parseInt(localStorage.getItem('statTotal')  || '0');
+        const solved   = parseInt(localStorage.getItem('statSolved') || '0');
+        const hints    = parseInt(localStorage.getItem('statHints')  || '0');
+        const avgHints = solved > 0 ? parseFloat((hints / solved).toFixed(1)) : 0;
+        const streak   = parseInt(localStorage.getItem('streak')     || '0');
+
+        try {
+            const { error } = await sb
+                .from('leaderboard')
+                .upsert({
+                    user_id:    currentUser.id,
+                    name:       name,
+                    total:      total,
+                    solved:     solved,
+                    avg_hints:  avgHints,
+                    streak:     streak,
+                    updated_at: new Date().toISOString()
+                }, { onConflict: 'user_id' });
             if (error) throw error;
-            alert("Erfolgreich registriert! Du kannst dich jetzt einloggen.");
-            toggleAuthMode();
+        } catch (e) {
+            console.error('Leaderboard Speicherfehler:', e);
+        }
+    }
+
+    async function renderLeaderboard() {
+        const content   = document.getElementById('leaderboard-content');
+        const nameArea  = document.getElementById('leaderboard-name-area');
+        const authPrompt = document.getElementById('leaderboard-auth-prompt');
+
+        // FIX: Login-Status korrekt anzeigen
+        if (!currentUser) {
+            nameArea.style.display   = 'none';
+            authPrompt.style.display = 'block';
         } else {
-            const { data, error } = await sb.auth.signInWithPassword({ email, password });
-            if (error) throw error;
-            location.reload(); // Seite neu laden um Stats zu synchronisieren
+            nameArea.style.display   = 'block';
+            authPrompt.style.display = 'none';
+            const savedName = localStorage.getItem('leaderboardName');
+            if (savedName) {
+                document.getElementById('leaderboard-current-name').innerText = `Dein Name: ${savedName}`;
+                document.getElementById('leaderboard-name-input').value       = savedName;
+            }
         }
-    } catch (e) {
-        alert("Fehler: " + e.message);
+
+        content.innerHTML = '<p style="color:#888;font-size:0.9rem">Lade...</p>';
+
+        try {
+            const { data, error } = await sb
+                .from('leaderboard')
+                .select('*')
+                .order('solved', { ascending: false })
+                .order('avg_hints', { ascending: true })
+                .limit(20);
+
+            if (error) throw error;
+
+            if (!data || data.length === 0) {
+                content.innerHTML = '<p style="color:#888;font-size:0.9rem">Noch keine Einträge.</p>';
+                return;
+            }
+
+            const myId = currentUser ? currentUser.id : null;
+            let html = `<table style="width:100%;border-collapse:collapse;font-size:0.9rem">
+                <thead>
+                    <tr style="border-bottom:2px solid #eee">
+                        <th style="padding:8px;text-align:left;color:#888">#</th>
+                        <th style="padding:8px;text-align:left;color:#888">Name</th>
+                        <th style="padding:8px;text-align:center;color:#888">Gelöst</th>
+                        <th style="padding:8px;text-align:center;color:#888">Ø Hinweise</th>
+                        <th style="padding:8px;text-align:center;color:#888">🔥</th>
+                    </tr>
+                </thead><tbody>`;
+
+            data.forEach((row, i) => {
+                const isMe = row.user_id === myId;
+                html += `<tr style="${isMe ? 'background:#f0f7ff;font-weight:bold' : ''}border-bottom:1px solid #f0f0f0">
+                    <td style="padding:8px">${i + 1}</td>
+                    <td style="padding:8px">${row.name}${isMe ? ' (Du)' : ''}</td>
+                    <td style="padding:8px;text-align:center">${row.solved}</td>
+                    <td style="padding:8px;text-align:center">${row.avg_hints}</td>
+                    <td style="padding:8px;text-align:center">${row.streak}</td>
+                </tr>`;
+            });
+
+            html += '</tbody></table>';
+            content.innerHTML = html;
+
+        } catch(e) {
+            content.innerHTML = '<p style="color:#c0392b;font-size:0.9rem">Bestenliste konnte nicht geladen werden.</p>';
+            console.error('Leaderboard Ladefehler:', e);
+        }
     }
-}
 
-// Geänderte Leaderboard-Funktion: Prüft Login!
-function openLeaderboard() {
-    if (!currentUser) {
-        document.getElementById('auth-modal').classList.add('visible');
-    } else {
-        document.getElementById('leaderboard-modal').classList.add('visible');
-        renderLeaderboard();
-    }
-}
+    // ===== INITIALISIERUNG =====
+    // FIX: checkUser() wird jetzt immer beim Seitenstart aufgerufen
+    checkUser().then(() => {
+        loadDaily();
+        updateStreakBanner();
+    });
 
-// Speichern mit USER_ID
-async function pushLeaderboardEntry(name) {
-    if (!currentUser) return;
-
-    const total = parseInt(localStorage.getItem('statTotal') || '0');
-    const solved = parseInt(localStorage.getItem('statSolved') || '0');
-    const hints = parseInt(localStorage.getItem('statHints') || '0');
-    const avgHints = solved > 0 ? parseFloat((hints / solved).toFixed(1)) : 0;
-    const streak = parseInt(localStorage.getItem('streak') || '0');
-
-    try {
-        const { error } = await sb
-            .from('leaderboard')
-            .upsert({ 
-                user_id: currentUser.id, // Die ID von Auth!
-                name: name, 
-                total: total, 
-                solved: solved, 
-                avg_hints: avgHints, 
-                streak: streak,
-                updated_at: new Date().toISOString()
-            }, { onConflict: 'user_id' }); // Konfliktvermeidung über user_id
-
-        if (error) throw error;
-    } catch (e) {
-        console.error('Speicherfehler:', e);
-    }
-}
 </script>
 </body>
 </html>

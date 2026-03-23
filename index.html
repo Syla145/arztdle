@@ -252,6 +252,13 @@
 
         /* ===== WARNHINWEIS ===== */
         .warning-hint {
+            max-width: 500px;
+            margin: 0 auto 20px auto;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 5px solid #e8cc72;
+            font-size: 0.85rem;
+            text-align: center;
             background: #fff3cd;
         }
 
@@ -441,7 +448,7 @@
     <button id="dark-mode-btn" onclick="toggleDark()">🌙</button>
 </nav>
 
-<!-- ===== AUTH MODAL (nur einmal, mit korrektem CSS) ===== -->
+<!-- ===== AUTH MODAL ===== -->
 <div class="modal-overlay" id="auth-modal" onclick="closeAuthOnOverlay(event)">
     <div class="auth-modal-box">
         <button class="modal-close" onclick="closeAuth()">✕</button>
@@ -449,8 +456,9 @@
         <p id="auth-desc" style="font-size: 0.85rem; color: #666; margin-bottom: 20px;">
             Erstelle ein Konto, um deine Stats dauerhaft zu speichern.
         </p>
-        <input type="email" id="auth-email" placeholder="E-Mail">
+       <input type="email" id="auth-email" placeholder="E-Mail">
         <input type="password" id="auth-pw" placeholder="Passwort (mind. 6 Zeichen)">
+        <input type="text" id="auth-username" placeholder="Dein Anzeigename..." style="display:none">
         <button onclick="handleAuth()" id="auth-submit-btn" class="auth-btn">Anmelden</button>
         <p id="auth-switch" onclick="toggleAuthMode()" style="margin-top:20px; font-size: 0.8rem; color: var(--accent); cursor: pointer; text-decoration: underline;">
             Noch kein Konto? Hier registrieren
@@ -501,14 +509,7 @@
                 Anmelden / Registrieren
             </button>
         </div>
-        <div id="leaderboard-name-area" style="display:none; margin-bottom:20px;">
-            <p style="font-size:0.9rem;color:#888">Gib deinen Namen ein, um auf der Bestenliste zu erscheinen:</p>
-            <div style="display:flex;gap:10px;justify-content:center">
-                <input type="text" id="leaderboard-name-input" placeholder="Dein Name..." autocomplete="off">
-                <button id="leaderboard-save-btn" onclick="saveLeaderboardName()">Speichern</button>
-            </div>
-            <div id="leaderboard-current-name" style="margin-top:10px;font-size:0.85rem;color:#888"></div>
-        </div>
+        <div id="leaderboard-name-area" style="display:none; margin-bottom:20px;"></div>
         <div id="leaderboard-content"></div>
     </div>
 
@@ -550,8 +551,8 @@
     </div>
 </div>
 
-<!-- ===== WARNHINWEIS ===== -->
-<div class="warning-hint" style="max-width:500px;margin:0 auto 20px auto;padding:15px;border-radius:10px;border-left:5px solid #e8cc72;font-size:0.85rem;text-align:center;">
+<!-- ===== WARNHINWEIS (CSS-Fix: kein Inline-Style mehr, alles über Klasse) ===== -->
+<div class="warning-hint">
     ⚠️ <strong>Hinweis:</strong> Arztdle dient ausschließlich zu Lernzwecken für Medizinstudierende. Die Inhalte stellen keine medizinische Beratung dar und ersetzen nicht den Besuch beim Arzt.
 </div>
 
@@ -567,11 +568,6 @@
 
     
     // ===== DIAGNOSEN-LISTE =====
-    // FIXES:
-    // - "Metabolisches Syndrom" hinzugefügt (Lösung von Puzzle #66)
-    // - "Anaphylaktischer Schock" hinzugefügt (Lösung von Puzzle #53)
-    // - "Malignes Melanom" hinzugefügt (Lösung von Puzzle #38)
-    // - "Akutes Glaukom" hinzugefügt (Lösung von Puzzle #24)
     const allDiagnoses = [
         "5α-Reduktase-Mangel", "Abdominelles Aortenaneurysma", "Abduzensparese",
         "Abhängige Persönlichkeitsstörung", "Absenz-Epilepsie", "Abszess",
@@ -1879,6 +1875,7 @@
     let usedGuesses        = new Set();
     let dailyFinished      = false;
     let currentUser        = null;
+    let countdownInterval  = null; // FIX: Countdown-Interval-ID speichern
 
     // ===== DOM-REFERENZEN =====
     const input   = document.getElementById('guess-input');
@@ -1909,7 +1906,6 @@
             done[puzzles[currentPuzzleIndex].id + '_attempts'] = revealedCount;
             localStorage.setItem('completedPuzzles', JSON.stringify(done));
 
-            // Leaderboard automatisch aktualisieren falls eingeloggt und Name vorhanden
             const lbName = localStorage.getItem('leaderboardName');
             if (lbName && currentUser) pushLeaderboardEntry(lbName);
         }
@@ -1937,7 +1933,6 @@
         }
         if (!puzzle) puzzle = puzzles[0];
 
-        // Gespeicherten Fortschritt laden
         const saved = JSON.parse(localStorage.getItem('dailyProgress') || 'null');
 
         initGame(puzzle);
@@ -1979,6 +1974,12 @@
         document.getElementById('submit-btn').disabled  = false;
         input.value = '';
         input.focus();
+
+        // FIX: Alten Countdown aufräumen
+        if (countdownInterval) {
+            clearInterval(countdownInterval);
+            countdownInterval = null;
+        }
 
         const wrapper = document.getElementById('hint-wrapper');
         wrapper.innerHTML = '';
@@ -2124,24 +2125,29 @@
     });
 
 
-    // ===== ARCHIV =====
+    // ===== ARCHIV (FIX: Gelöste Rätsel zeigen "Ansehen" statt "Spielen") =====
     function renderArchive() {
         const today = getToday();
         const cont  = document.getElementById('archive-content');
         cont.innerHTML = '';
+        const done = JSON.parse(localStorage.getItem('completedPuzzles') || '{}');
+
         puzzles
             .filter(p => p.date <= today)
             .forEach(p => {
                 const div     = document.createElement('div');
                 div.className = 'archive-item';
-                const done   = JSON.parse(localStorage.getItem('completedPuzzles') || '{}');
                 const status = done[p.id];
                 const badge  = status === 'solved'  ? ' <span style="color:#27ae60;font-size:1.1rem">✓</span>'
                              : status === 'failed'  ? ' <span style="color:#c0392b;font-size:1.1rem">✗</span>'
                              : '';
+                const isCompleted = status === 'solved' || status === 'failed';
+                const btnLabel    = isCompleted ? 'Ansehen' : 'Spielen';
+                const btnBg       = isCompleted ? '#888' : 'var(--accent)';
+
                 div.innerHTML = `<span>#${p.id} - ${p.date}${badge}</span>
-                    <button style="background:var(--accent);color:white;border:none;padding:5px 12px;border-radius:6px;cursor:pointer;font-weight:bold"
-                        onclick="initGameById(${p.id})">Spielen</button>`;
+                    <button style="background:${btnBg};color:white;border:none;padding:5px 12px;border-radius:6px;cursor:pointer;font-weight:bold"
+                        onclick="initGameById(${p.id})">${btnLabel}</button>`;
                 cont.appendChild(div);
             });
     }
@@ -2219,11 +2225,18 @@
     }
 
 
-    // ===== COUNTDOWN =====
+    // ===== COUNTDOWN (FIX: Memory Leak behoben) =====
     function startCountdown() {
         document.getElementById('countdown-box').style.display = 'block';
         document.getElementById('guess-input').disabled = true;
         document.getElementById('submit-btn').disabled  = true;
+
+        // FIX: Altes Interval aufräumen bevor neues gestartet wird
+        if (countdownInterval) {
+            clearInterval(countdownInterval);
+            countdownInterval = null;
+        }
+
         function update() {
             const now      = new Date();
             const tomorrow = new Date(now);
@@ -2236,7 +2249,7 @@
             document.getElementById('countdown-timer').innerText = `${h}:${m}:${s}`;
         }
         update();
-        setInterval(update, 1000);
+        countdownInterval = setInterval(update, 1000);
     }
 
 
@@ -2288,11 +2301,12 @@
 
     function toggleAuthMode() {
         isSignUpMode = !isSignUpMode;
-        document.getElementById('auth-title').innerText      = isSignUpMode ? 'Registrieren' : 'Leaderboard Login';
+        document.getElementById('auth-title').innerText      = isSignUpMode ? 'Registrieren' : 'Login';
         document.getElementById('auth-submit-btn').innerText = isSignUpMode ? 'Konto erstellen' : 'Anmelden';
         document.getElementById('auth-switch').innerText     = isSignUpMode
             ? 'Schon ein Konto? Hier einloggen'
             : 'Noch kein Konto? Hier registrieren';
+        document.getElementById('auth-username').style.display = isSignUpMode ? 'block' : 'none';
     }
 
     async function handleAuth() {
@@ -2304,16 +2318,40 @@
 
         try {
             if (isSignUpMode) {
-                const { error } = await sb.auth.signUp({ email, password });
+                const username = document.getElementById('auth-username').value.trim();
+                if (!username) return alert('Bitte gib einen Anzeigenamen ein.');
+            
+                const { data: existing } = await sb
+                    .from('leaderboard')
+                    .select('user_id')
+                    .eq('name', username)
+                    .maybeSingle();
+                if (existing) return alert('Dieser Name ist bereits vergeben. Bitte wähle einen anderen.');
+            
+                const { data, error } = await sb.auth.signUp({ email, password });
                 if (error) throw error;
-                alert('Erfolgreich registriert! Du kannst dich jetzt einloggen.');
-                toggleAuthMode();
+            
+                localStorage.setItem('leaderboardName', username);
+                currentUser = data.user;
+            
+                await sb.from('leaderboard').insert({
+                    user_id:    currentUser.id,
+                    name:       username,
+                    total:      0,
+                    solved:     0,
+                    avg_hints:  0,
+                    streak:     0,
+                    updated_at: new Date().toISOString()
+                });
+            
+                closeAuth();
+                renderLeaderboard();
             } else {
                 const { data, error } = await sb.auth.signInWithPassword({ email, password });
                 if (error) throw error;
                 currentUser = data.user;
                 closeAuth();
-                renderLeaderboard(); // Leaderboard neu rendern nach Login
+                renderLeaderboard();
             }
         } catch (e) {
             alert('Fehler: ' + e.message);
@@ -2321,9 +2359,8 @@
     }
 
 
-    // ===== LEADERBOARD =====
+    // ===== LEADERBOARD (FIX: Dopplung beim Namen-Speichern behoben) =====
 
-    // FIX: checkUser() wird jetzt beim Seitenstart aufgerufen
     async function checkUser() {
         try {
             const { data: { user } } = await sb.auth.getUser();
@@ -2337,34 +2374,43 @@
         }
     }
 
-    // FIX: saveLeaderboardName() war komplett fehlend
+    // FIX: Zeigt Name-Edit-Feld nur wenn nötig
+    function showNameEdit() {
+        const nameArea = document.getElementById('leaderboard-name-area');
+        const savedName = localStorage.getItem('leaderboardName') || '';
+        nameArea.innerHTML = `
+            <div style="display:flex;gap:10px;justify-content:center;align-items:center">
+                <input type="text" id="leaderboard-name-input" placeholder="Neuer Name..." value="${savedName}" autocomplete="off" style="max-width:200px">
+                <button id="leaderboard-save-btn" onclick="saveLeaderboardName()">Speichern</button>
+                <button onclick="renderLeaderboard()" style="background:none;border:1px solid #ddd;padding:10px 15px;border-radius:8px;cursor:pointer;color:#888">Abbrechen</button>
+            </div>`;
+    }
+
     async function saveLeaderboardName() {
-    const nameInput = document.getElementById('leaderboard-name-input');
-    const name      = nameInput.value.trim();
-    if (!name) return alert('Bitte gib einen Namen ein.');
-    if (!currentUser) {
-        document.getElementById('auth-modal').classList.add('visible');
-        return;
+        const nameInput = document.getElementById('leaderboard-name-input');
+        const name      = nameInput.value.trim();
+        if (!name) return alert('Bitte gib einen Namen ein.');
+        if (!currentUser) {
+            document.getElementById('auth-modal').classList.add('visible');
+            return;
+        }
+
+        const { data: existing } = await sb
+            .from('leaderboard')
+            .select('user_id')
+            .eq('name', name)
+            .maybeSingle();
+
+        if (existing && existing.user_id !== currentUser.id) {
+            alert('Dieser Name ist bereits vergeben. Bitte wähle einen anderen.');
+            return;
+        }
+
+        localStorage.setItem('leaderboardName', name);
+        await pushLeaderboardEntry(name);
+        await renderLeaderboard();
     }
 
-    // Prüfen ob Name bereits vergeben ist
-    const { data: existing } = await sb
-        .from('leaderboard')
-        .select('user_id')
-        .eq('name', name)
-        .maybeSingle();
-
-    if (existing && existing.user_id !== currentUser.id) {
-        alert('Dieser Name ist bereits vergeben. Bitte wähle einen anderen.');
-        return;
-    }
-
-    localStorage.setItem('leaderboardName', name);
-    document.getElementById('leaderboard-current-name').innerText = `Dein Name: ${name}`;
-    nameInput.value = '';
-    await pushLeaderboardEntry(name);
-    await renderLeaderboard();
-}
     async function pushLeaderboardEntry(name) {
         if (!currentUser) return;
 
@@ -2393,21 +2439,34 @@
     }
 
     async function renderLeaderboard() {
-        const content   = document.getElementById('leaderboard-content');
-        const nameArea  = document.getElementById('leaderboard-name-area');
+        const content    = document.getElementById('leaderboard-content');
+        const nameArea   = document.getElementById('leaderboard-name-area');
         const authPrompt = document.getElementById('leaderboard-auth-prompt');
 
-        // FIX: Login-Status korrekt anzeigen
+        // FIX: Leaderboard-Name-Bereich komplett neu aufbauen je nach Status
         if (!currentUser) {
             nameArea.style.display   = 'none';
+            nameArea.innerHTML       = '';
             authPrompt.style.display = 'block';
         } else {
-            nameArea.style.display   = 'block';
             authPrompt.style.display = 'none';
+            nameArea.style.display   = 'block';
             const savedName = localStorage.getItem('leaderboardName');
             if (savedName) {
-                document.getElementById('leaderboard-current-name').innerText = `Dein Name: ${savedName}`;
-                document.getElementById('leaderboard-name-input').value       = savedName;
+                // FIX: Name existiert → nur Anzeige + Ändern-Link, kein Eingabefeld
+                nameArea.innerHTML = `
+                    <p style="font-size:0.9rem;color:#888">
+                        Angemeldet als: <strong style="color:var(--accent)">${savedName}</strong>
+                        <span onclick="showNameEdit()" style="color:var(--accent);cursor:pointer;text-decoration:underline;margin-left:10px;font-size:0.85rem">Ändern</span>
+                    </p>`;
+            } else {
+                // Kein Name → Eingabefeld anzeigen
+                nameArea.innerHTML = `
+                    <p style="font-size:0.9rem;color:#888">Gib deinen Namen ein, um auf der Bestenliste zu erscheinen:</p>
+                    <div style="display:flex;gap:10px;justify-content:center">
+                        <input type="text" id="leaderboard-name-input" placeholder="Dein Name..." autocomplete="off" style="max-width:200px">
+                        <button id="leaderboard-save-btn" onclick="saveLeaderboardName()">Speichern</button>
+                    </div>`;
             }
         }
 
@@ -2461,7 +2520,6 @@
     }
 
     // ===== INITIALISIERUNG =====
-    // FIX: checkUser() wird jetzt immer beim Seitenstart aufgerufen
     checkUser().then(() => {
         loadDaily();
         updateStreakBanner();

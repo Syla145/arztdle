@@ -1942,7 +1942,8 @@
             usedGuesses   = new Set(saved.usedGuesses);
             dailyFinished = saved.finished;
 
-            for (let i = 0; i < saved.revealedCount; i++) {
+            const hintsToShow = saved.finished ? puzzles[currentPuzzleIndex].hints.length : saved.revealedCount;
+            for (let i = 0; i < hintsToShow; i++) {
                 const el = document.getElementById(`h-${i}`);
                 if (el) el.classList.add('visible');
             }
@@ -2453,12 +2454,15 @@
             nameArea.style.display   = 'block';
             const savedName = localStorage.getItem('leaderboardName');
             if (savedName) {
+                pushLeaderboardEntry(savedName); // Stats beim Öffnen synchronisieren
+            }
+            if (savedName) {
                 // FIX: Name existiert → nur Anzeige + Ändern-Link, kein Eingabefeld
                 nameArea.innerHTML = `
-                    <p style="font-size:0.9rem;color:#888">
-                        Angemeldet als: <strong style="color:var(--accent)">${savedName}</strong>
-                        <span onclick="showNameEdit()" style="color:var(--accent);cursor:pointer;text-decoration:underline;margin-left:10px;font-size:0.85rem">Ändern</span>
-                    </p>`;
+                <p style="font-size:0.9rem;color:#888">
+                    Angemeldet als: <strong style="color:var(--accent)">${savedName}</strong>
+                    <span onclick="logout()" style="color:#c0392b;cursor:pointer;text-decoration:underline;margin-left:10px;font-size:0.85rem">Abmelden</span>
+                </p>`;
             } else {
                 // Kein Name → Eingabefeld anzeigen
                 nameArea.innerHTML = `
@@ -2525,6 +2529,12 @@
         updateStreakBanner();
     });
 
+    async function logout() {
+    await sb.auth.signOut();
+    currentUser = null;
+    localStorage.removeItem('leaderboardName');
+    renderLeaderboard();
+}
 </script>
 </body>
 </html>

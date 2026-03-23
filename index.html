@@ -6,33 +6,20 @@
     <title>Arztdle - Täglich Medizin-Diagnosen erraten</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
-        /* ===== HANDY ===== */
+        /* ===== MOBILE ===== */
         @media (max-width: 500px) {
-            nav {
-                gap: 15px;
-                padding: 12px 10px;
-                flex-wrap: wrap;
-                justify-content: center;
-            }
-        
-            nav a {
-                font-size: 0.8rem;
-            }
-        
-            #dark-mode-btn {
-                position: static !important;
-                order: 5;
-            }
+            nav { gap: 15px; padding: 12px 10px; flex-wrap: wrap; justify-content: center; }
+            nav a { font-size: 0.8rem; }
+            #dark-mode-btn { position: static !important; order: 5; }
         }
-        
+
         /* ===== VARIABLEN ===== */
         :root {
-            --bg-blue: #f0f7ff;
-            --hint-blue: #d1e9ff;
+            --bg-blue:  #f0f7ff;
             --text-dark: #2c3e50;
-            --accent: #2a9d8f;
-            --success: #27ae60;
-            --error: #c0392b;
+            --accent:   #2a9d8f;
+            --success:  #27ae60;
+            --error:    #c0392b;
         }
 
         /* ===== BASIS ===== */
@@ -61,7 +48,7 @@
             color: #666;
             font-weight: bold;
             cursor: pointer;
-            transition: 0.3s;
+            transition: color 0.3s;
         }
 
         nav a:hover { color: var(--accent); }
@@ -163,7 +150,7 @@
             border-radius: 8px;
             font-weight: bold;
             cursor: pointer;
-            transition: 0.3s;
+            transition: opacity 0.3s;
         }
 
         button#submit-btn:hover { opacity: 0.9; }
@@ -262,30 +249,12 @@
             letter-spacing: 1px;
         }
 
-        /* ===== DARK MODE ===== */
-        body.dark                          { background: #1a1a2e; color: #e0e0e0; }
-        body.dark .container               { background: #16213e; box-shadow: 0 8px 30px rgba(0,0,0,0.4); }
-        body.dark nav                      { background: #16213e; border-color: #2a2a4a; }
-        body.dark nav a                    { color: #aaa; }
-        body.dark nav a:hover              { color: var(--accent); }
-        body.dark input                    { background: #1a1a2e; border-color: #2a2a4a; color: #e0e0e0; }
-        body.dark .autocomplete-suggestions{ background: #16213e; border-color: #2a2a4a; }
-        body.dark .suggestion              { color: #e0e0e0; }
-        body.dark .suggestion:hover        { background: #1a1a2e; }
-        body.dark .archive-item            { border-color: #2a2a4a; }
-        body.dark .countdown-box           { background: #1a1a2e; }
-        body.dark .countdown-box .time     { color: var(--accent); }
-        body.dark .stats-box               { background: #1a1a2e; }
-        body.dark .stats-box .number       { color: var(--accent); }
-        body.dark .streak-banner           { color: #e8a472; }
+        /* ===== WARNHINWEIS ===== */
+        .warning-hint {
+            background: #fff3cd;
+        }
 
-        body.dark .hint-box:nth-child(1)   { background: #3d1f1e; border-color: #e87a72; }
-        body.dark .hint-box:nth-child(2)   { background: #3d2a1e; border-color: #e8a472; }
-        body.dark .hint-box:nth-child(3)   { background: #3d341e; border-color: #e8cc72; }
-        body.dark .hint-box:nth-child(4)   { background: #2a3d1e; border-color: #a8cc5a; }
-        body.dark .hint-box:nth-child(5)   { background: #1e3d22; border-color: #6bbf72; }
-        body.dark .hint-box:nth-child(6)   { background: #1a3d1e; border-color: #3aad4e; }
-
+        /* ===== FOOTER ===== */
         footer {
             text-align: center;
             padding: 20px;
@@ -302,17 +271,7 @@
 
         footer a:hover { color: var(--accent); }
 
-        .warning-hint {
-            background: #fff3cd;
-        }
-        
-        body.dark footer { color: #666; }
-        body.dark .warning-hint {
-            background: #3d3010;
-            border-color: #e8cc72;
-            color: #e0e0e0;
-        }
-
+        /* ===== MODALS ===== */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -323,9 +282,9 @@
             justify-content: center;
             align-items: center;
         }
-        
+
         .modal-overlay.visible { display: flex; }
-        
+
         .modal-box {
             background: white;
             border-radius: 12px;
@@ -337,7 +296,7 @@
             text-align: left;
             position: relative;
         }
-        
+
         .modal-close {
             position: absolute;
             top: 12px; right: 16px;
@@ -347,8 +306,6 @@
             cursor: pointer;
             color: #999;
         }
-        
-        body.dark .modal-box { background: #16213e; color: #e0e0e0; }
 
         .result-overlay {
             display: none;
@@ -360,9 +317,9 @@
             justify-content: center;
             align-items: center;
         }
-        
+
         .result-overlay.visible { display: flex; }
-        
+
         .result-box {
             background: white;
             border-radius: 12px;
@@ -372,16 +329,48 @@
             text-align: center;
             position: relative;
         }
-        
-        .result-box .result-emoji { font-size: 3rem; margin-bottom: 10px; }
-        .result-box h2 { margin: 10px 0; font-size: 1.4rem; }
+
+        .result-box .result-emoji  { font-size: 3rem; margin-bottom: 10px; }
+        .result-box h2             { margin: 10px 0; font-size: 1.4rem; }
         .result-box .result-solution { font-size: 1rem; color: #888; margin: 10px 0 20px 0; }
         .result-box .result-attempts { font-size: 0.9rem; font-weight: bold; color: var(--accent); margin-bottom: 20px; }
+
         .result-btn { background: var(--accent); color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem; }
         .result-btn:hover { opacity: 0.9; }
-        
-        body.dark .result-box { background: #16213e; color: #e0e0e0; }
+
+        /* ===== DARK MODE ===== */
+        body.dark                           { background: #1a1a2e; color: #e0e0e0; }
+        body.dark .container                { background: #16213e; box-shadow: 0 8px 30px rgba(0,0,0,0.4); }
+        body.dark nav                       { background: #16213e; border-color: #2a2a4a; }
+        body.dark nav a                     { color: #aaa; }
+        body.dark nav a:hover               { color: var(--accent); }
+        body.dark input                     { background: #1a1a2e; border-color: #2a2a4a; color: #e0e0e0; }
+        body.dark .autocomplete-suggestions { background: #16213e; border-color: #2a2a4a; }
+        body.dark .suggestion               { color: #e0e0e0; }
+        body.dark .suggestion:hover         { background: #1a1a2e; }
+        body.dark .archive-item             { border-color: #2a2a4a; }
+        body.dark .countdown-box            { background: #1a1a2e; }
+        body.dark .countdown-box .time      { color: var(--accent); }
+        body.dark .stats-box                { background: #1a1a2e; }
+        body.dark .stats-box .number        { color: var(--accent); }
+        body.dark .streak-banner            { color: #e8a472; }
+        body.dark footer                    { color: #666; }
+        body.dark .modal-box                { background: #16213e; color: #e0e0e0; }
+        body.dark .result-box               { background: #16213e; color: #e0e0e0; }
         body.dark .result-box .result-solution { color: #aaa; }
+
+        body.dark .hint-box:nth-child(1)    { background: #3d1f1e; border-color: #e87a72; }
+        body.dark .hint-box:nth-child(2)    { background: #3d2a1e; border-color: #e8a472; }
+        body.dark .hint-box:nth-child(3)    { background: #3d341e; border-color: #e8cc72; }
+        body.dark .hint-box:nth-child(4)    { background: #2a3d1e; border-color: #a8cc5a; }
+        body.dark .hint-box:nth-child(5)    { background: #1e3d22; border-color: #6bbf72; }
+        body.dark .hint-box:nth-child(6)    { background: #1a3d1e; border-color: #3aad4e; }
+
+        body.dark .warning-hint {
+            background: #3d3010;
+            border-color: #e8cc72;
+            color: #e0e0e0;
+        }
     </style>
 </head>
 <body>
@@ -427,33 +416,36 @@
         <h1>Meine Statistik</h1>
         <div id="stats-content"></div>
     </div>
-    
+
     <!-- INFO -->
     <div id="info" class="section">
-        <h1>Über Arztdle </h1>
+        <h1>Über Arztdle</h1>
         <p>Dieses Tool hilft Medizinstudierenden, ihr diagnostisches Wissen zu trainieren.</p>
-        <p>Für jede Diagnose hast du 6 Tipps und somit 6 Versuche zeit.</p>
+        <p>Für jede Diagnose hast du 6 Tipps und somit 6 Versuche Zeit.</p>
         <p>Jeden Tag erscheint ein neuer klinischer Fall. Viel Erfolg!</p>
         <p style="font-size: 0.8rem; color: #999;">Erstellt für eine angehende Ärztin. ~A</p>
     </div>
 </div>
-    <div class="modal-overlay" id="impressum-modal" onclick="closeImpressum(event)">
-        <div class="modal-box">
-            <button class="modal-close" onclick="closeImpressum()">✕</button>
-            <h2 style="margin-top:0">Impressum</h2>
-            <strong>Angaben gemäß § 5 TMG</strong><br><br>
-            Josef Heininger<br>
-            Albert-Roßhaupter-Straße 109<br>
-            81369 München<br><br>
-            <strong>Kontakt</strong><br>
-            jhwindach@gmx.de<br><br>
-            <strong>Haftungsausschluss</strong><br>
-            Arztdle ist ein privates, nicht-kommerzielles Lernprojekt für Medizinstudierende.
-            Die Inhalte stellen keine medizinische Beratung dar und ersetzen nicht den Besuch beim Arzt.
-        </div>
-    </div>
 
-    <div class="result-overlay" id="result-modal">
+<!-- ===== IMPRESSUM MODAL ===== -->
+<div class="modal-overlay" id="impressum-modal" onclick="closeImpressum(event)">
+    <div class="modal-box">
+        <button class="modal-close" onclick="closeImpressum()">✕</button>
+        <h2 style="margin-top:0">Impressum</h2>
+        <strong>Angaben gemäß § 5 TMG</strong><br><br>
+        Josef Heininger<br>
+        Albert-Roßhaupter-Straße 109<br>
+        81369 München<br><br>
+        <strong>Kontakt</strong><br>
+        jhwindach@gmx.de<br><br>
+        <strong>Haftungsausschluss</strong><br>
+        Arztdle ist ein privates, nicht-kommerzielles Lernprojekt für Medizinstudierende.
+        Die Inhalte stellen keine medizinische Beratung dar und ersetzen nicht den Besuch beim Arzt.
+    </div>
+</div>
+
+<!-- ===== ERGEBNIS MODAL ===== -->
+<div class="result-overlay" id="result-modal">
     <div class="result-box">
         <div class="result-emoji" id="result-emoji">🩺</div>
         <h2 id="result-title"></h2>
@@ -462,15 +454,16 @@
         <button class="result-btn" onclick="document.getElementById('result-modal').classList.remove('visible')">Schließen</button>
     </div>
 </div>
-    
-    <div class="warning-hint" style="margin-top: 20px; padding: 15px; border-radius: 10px; border-left: 5px solid #e8cc72; font-size: 0.85rem; text-align: center;">
+
+<!-- ===== WARNHINWEIS ===== -->
+<div class="warning-hint" style="margin-top: 20px; padding: 15px; border-radius: 10px; border-left: 5px solid #e8cc72; font-size: 0.85rem; text-align: center;">
     ⚠️ <strong>Hinweis:</strong> Arztdle dient ausschließlich zu Lernzwecken für Medizinstudierende. Die Inhalte stellen keine medizinische Beratung dar und ersetzen nicht den Besuch beim Arzt.
-    </div>
+</div>
 
 <footer>
     © Arztdle-Team | <a onclick="document.getElementById('impressum-modal').classList.add('visible')">Impressum</a>
 </footer>
-    
+
 <script>
 
     // ===== DIAGNOSEN-LISTE =====
@@ -1776,7 +1769,7 @@
     let currentPuzzleIndex = 0;
     let revealedCount      = 1;
     let usedGuesses        = new Set();
-    let dailyFinished      = false; // NEU
+    let dailyFinished      = false;
 
     // ===== DOM-REFERENZEN =====
     const input   = document.getElementById('guess-input');
@@ -1791,36 +1784,76 @@
     }
 
 
+    // ===== FORTSCHRITT SPEICHERN =====
+    function saveDailyProgress(finished, solved) {
+        localStorage.setItem('dailyProgress', JSON.stringify({
+            date:          getToday(),
+            revealedCount: revealedCount,
+            usedGuesses:   [...usedGuesses],
+            finished:      finished,
+            solved:        solved
+        }));
+    }
+
+
     // ===== NAVIGATION =====
     function showSection(id) {
         document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
         document.getElementById(id).classList.add('active');
         if (id === 'archive') renderArchive();
         if (id === 'stats')   renderStats();
-        if (id === 'play') {
-            if (!dailyFinished) loadDaily();
-        }
+        if (id === 'play')    loadDaily();
     }
 
 
     // ===== SPIEL LADEN =====
     function loadDaily() {
-        const today = getToday();
-        let puzzle  = puzzles.find(p => p.date === today);
+        const today  = getToday();
+        let puzzle   = puzzles.find(p => p.date === today);
         if (!puzzle) {
             const past = puzzles.filter(p => p.date <= today);
             puzzle = past[past.length - 1];
         }
         if (!puzzle) puzzle = puzzles[0];
+
+        // Gespeicherten Fortschritt laden
+        const saved = JSON.parse(localStorage.getItem('dailyProgress') || 'null');
+
         initGame(puzzle);
+
+        if (saved && saved.date === today) {
+            // Fortschritt wiederherstellen
+            revealedCount = saved.revealedCount;
+            usedGuesses   = new Set(saved.usedGuesses);
+            dailyFinished = saved.finished;
+
+            for (let i = 0; i < saved.revealedCount; i++) {
+                const el = document.getElementById(`h-${i}`);
+                if (el) el.classList.add('visible');
+            }
+
+            const msg = document.getElementById('status-msg');
+            if (saved.finished) {
+                if (saved.solved) {
+                    msg.innerText   = 'Richtig! Hervorragende Diagnose. 🩺';
+                    msg.style.color = 'var(--success)';
+                } else {
+                    msg.innerText   = `Leider nicht richtig. Die Lösung war: ${puzzle.solution}`;
+                    msg.style.color = 'var(--error)';
+                }
+                startCountdown();
+            }
+        }
     }
 
     function initGame(puzzle) {
         revealedCount = 1;
         usedGuesses   = new Set();
+        dailyFinished = false;
 
         document.getElementById('meta-info').innerText  = `Arztdle #${puzzle.id} - ${puzzle.date}`;
         document.getElementById('status-msg').innerText = '';
+        document.getElementById('status-msg').style.color = '';
         document.getElementById('countdown-box').style.display = 'none';
         input.value = '';
         input.focus();
@@ -1828,10 +1861,10 @@
         const wrapper = document.getElementById('hint-wrapper');
         wrapper.innerHTML = '';
         puzzle.hints.forEach((h, i) => {
-            const div       = document.createElement('div');
-            div.className   = `hint-box ${i === 0 ? 'visible' : ''}`;
-            div.id          = `h-${i}`;
-            div.innerText   = h;
+            const div     = document.createElement('div');
+            div.className = `hint-box ${i === 0 ? 'visible' : ''}`;
+            div.id        = `h-${i}`;
+            div.innerText = h;
             wrapper.appendChild(div);
         });
 
@@ -1869,8 +1902,9 @@
 
         if (guess === solution) {
             msg.innerText   = 'Richtig! Hervorragende Diagnose. 🩺';
-            dailyFinished = true;
             msg.style.color = 'var(--success)';
+            dailyFinished   = true;
+            saveDailyProgress(true, true);
             updateStreak(true);
             startCountdown();
             localStorage.setItem('statSolved', parseInt(localStorage.getItem('statSolved') || '0') + 1);
@@ -1887,11 +1921,13 @@
                 revealedCount++;
                 msg.innerText   = 'Falsch! Ein weiterer Hinweis wurde freigeschaltet.';
                 msg.style.color = 'orange';
+                saveDailyProgress(false, false);
             } else {
                 msg.innerText   = `Leider nicht richtig. Die Lösung war: ${puzzles[currentPuzzleIndex].solution}`;
-                setTimeout(() => showResult(false, puzzles[currentPuzzleIndex].solution, revealedCount), 800);
                 msg.style.color = 'var(--error)';
-                dailyFinished = true;
+                dailyFinished   = true;
+                saveDailyProgress(true, false);
+                setTimeout(() => showResult(false, puzzles[currentPuzzleIndex].solution, revealedCount), 800);
             }
         }
         input.value = '';
@@ -1918,9 +1954,9 @@
             });
         } else if (e.key === 'Enter') {
             if (selectedIndex >= 0 && suggestions[selectedIndex]) {
-                input.value   = suggestions[selectedIndex].innerText;
+                input.value       = suggestions[selectedIndex].innerText;
                 suggBox.innerHTML = '';
-                selectedIndex = -1;
+                selectedIndex     = -1;
                 input.focus();
             } else {
                 suggBox.innerHTML = '';
@@ -1939,10 +1975,10 @@
 
         const matches = allDiagnoses.filter(d => d.toLowerCase().includes(val)).slice(0, 8);
         matches.forEach(m => {
-            const div        = document.createElement('div');
-            div.className    = 'suggestion';
+            const div         = document.createElement('div');
+            div.className     = 'suggestion';
             const alreadyUsed = usedGuesses.has(m.toLowerCase());
-            div.innerText    = m;
+            div.innerText     = m;
             if (alreadyUsed) {
                 div.style.color         = '#bbb';
                 div.style.pointerEvents = 'none';
@@ -1972,15 +2008,18 @@
             .forEach(p => {
                 const div     = document.createElement('div');
                 div.className = 'archive-item';
-                div.innerHTML = `<span>#${p.id} - ${p.date}</span><button style="background:var(--accent);color:white;border:none;padding:5px 12px;border-radius:6px;cursor:pointer;font-weight:bold" onclick="initGameById(${p.id})">Spielen</button>`;
+                div.innerHTML = `<span>#${p.id} - ${p.date}</span>
+                    <button style="background:var(--accent);color:white;border:none;padding:5px 12px;border-radius:6px;cursor:pointer;font-weight:bold"
+                        onclick="initGameById(${p.id})">Spielen</button>`;
                 cont.appendChild(div);
             });
     }
 
     function initGameById(id) {
         const p = puzzles.find(x => x.id === id);
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.getElementById('play').classList.add('active');
         initGame(p);
-        showSection('play');
     }
 
 
@@ -2006,22 +2045,20 @@
 
     // ===== STREAK =====
     function updateStreak(solved) {
-        const today     = getToday();
+        const today      = getToday();
         const lastPlayed = localStorage.getItem('lastPlayed');
-        let streak      = parseInt(localStorage.getItem('streak') || '0');
+        let streak       = parseInt(localStorage.getItem('streak') || '0');
 
-        if (solved) {
-            if (lastPlayed !== today) {
-                const yesterday = new Date();
-                yesterday.setDate(yesterday.getDate() - 1);
-                const yStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth()+1).padStart(2,'0')}-${String(yesterday.getDate()).padStart(2,'0')}`;
-                streak = lastPlayed === yStr ? streak + 1 : 1;
-                localStorage.setItem('streak',     streak);
-                localStorage.setItem('lastPlayed', today);
-            }
+        if (solved && lastPlayed !== today) {
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            const yStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth()+1).padStart(2,'0')}-${String(yesterday.getDate()).padStart(2,'0')}`;
+            streak = lastPlayed === yStr ? streak + 1 : 1;
+            localStorage.setItem('streak',     streak);
+            localStorage.setItem('lastPlayed', today);
         }
 
-        const banner = document.getElementById('streak-banner');
+        const banner     = document.getElementById('streak-banner');
         banner.innerText = streak > 0 ? `🔥 ${streak} Tag${streak > 1 ? 'e' : ''} in Folge` : '';
     }
 
@@ -2048,9 +2085,8 @@
     // ===== DARK MODE =====
     function toggleDark() {
         document.body.classList.toggle('dark');
-        const btn    = document.getElementById('dark-mode-btn');
-        const isDark = document.body.classList.contains('dark');
-        btn.innerText = isDark ? '☀️' : '🌙';
+        const isDark  = document.body.classList.contains('dark');
+        document.getElementById('dark-mode-btn').innerText = isDark ? '☀️' : '🌙';
         localStorage.setItem('darkMode', isDark);
     }
 
@@ -2060,29 +2096,30 @@
     }
 
 
+    // ===== IMPRESSUM =====
+    function closeImpressum(event) {
+        const modal = document.getElementById('impressum-modal');
+        if (!event || event.target === modal) modal.classList.remove('visible');
+    }
+
+
+    // ===== ERGEBNIS POP-UP =====
+    function showResult(correct, solution, attempts) {
+        document.getElementById('result-emoji').innerText    = correct ? '🎉' : '😔';
+        document.getElementById('result-title').innerText    = correct ? 'Richtig!' : 'Nicht geschafft';
+        document.getElementById('result-solution').innerText = correct
+            ? `Die Diagnose war: ${solution}`
+            : `Die richtige Diagnose war: ${solution}`;
+        document.getElementById('result-attempts').innerText = correct
+            ? `Geschafft auf Versuch ${attempts} von 6`
+            : `Du hast alle 6 Versuche aufgebraucht`;
+        document.getElementById('result-modal').classList.add('visible');
+    }
+
+
     // ===== START =====
     updateStreak(false);
     loadDaily();
-
-    function closeImpressum(event) {
-    const modal = document.getElementById('impressum-modal');
-    if (!event || event.target === modal) {
-        modal.classList.remove('visible');
-        }
-    }
-
-    // ===== Pop-Up =====
-    function showResult(correct, solution, attempts) {
-    document.getElementById('result-emoji').innerText  = correct ? '🎉' : '😔';
-    document.getElementById('result-title').innerText  = correct ? 'Richtig!' : 'Nicht geschafft';
-    document.getElementById('result-solution').innerText = correct
-        ? `Die Diagnose war: ${solution}`
-        : `Die richtige Diagnose war: ${solution}`;
-    document.getElementById('result-attempts').innerText = correct
-        ? `Geschafft auf Versuch ${attempts} von 6`
-        : `Du hast alle 6 Versuche aufgebraucht`;
-    document.getElementById('result-modal').classList.add('visible');
-    }
 
 </script>
 </body>

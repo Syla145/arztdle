@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Arztdle - Täglich Medizin-Diagnosen erraten</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         /* ===== MOBILE ===== */
         @media (max-width: 500px) {
@@ -486,7 +487,14 @@
 </footer>
 
 <script>
+    // ===== SUPABASE INITIALISIERUNG =====
+    const SUPABASE_URL = 'https://tyxbabxjjrcqarqxmgoc.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR5eGJhYnhqanJjcWFycXhtZ29jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyNTcyODQsImV4cCI6MjA4OTgzMzI4NH0.4Tz5zSIClabWP6Q3RbhuRmdxvENAEV1mI3mZYczjOSw';
+    const supabase = lib.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    
+    // Hier beginnt dein bisheriger Code (allDiagnoses, etc.) ...
 
+    
     // ===== DIAGNOSEN-LISTE =====
     const allDiagnoses = [
         "5α-Reduktase-Mangel", "Abdominelles Aortenaneurysma", "Abduzensparese",
@@ -2182,96 +2190,99 @@
     }
 
 
-    // ===== LEADERBOARD =====
-        async function saveLeaderboardName() {
-            const nameInput = document.getElementById('leaderboard-name-input');
-            const name = nameInput.value.trim();
-            if (!name) return;
+    // ===== NEUE LEADERBOARD FUNKTIONEN =====
+    
+    async function saveLeaderboardName() {
+        const input = document.getElementById('leaderboard-name-input');
+        const name = input.value.trim();
+        if (name.length < 2) return alert('Bitte einen gültigen Namen eingeben.');
         
-            localStorage.setItem('leaderboardName', name);
-            await pushLeaderboardEntry(name);
-            nameInput.value = '';
-            renderLeaderboard();
+        localStorage.setItem('leaderboardName', name);
+        await pushLeaderboardEntry(name);
+        renderLeaderboard();
+    }
+    
+    async function pushLeaderboardEntry(name) {
+        const total = parseInt(localStorage.getItem('statTotal') || '0');
+        const solved = parseInt(localStorage.getItem('statSolved') || '0');
+        const hints = parseInt(localStorage.getItem('statHints') || '0');
+        const avgHints = solved > 0 ? parseFloat((hints / solved).toFixed(1)) : 0;
+        const streak = parseInt(localStorage.getItem('streak') || '0');
+    
+        try {
+            const { error } = await supabase
+                .from('leaderboard')
+                .upsert({ 
+                    name: name, 
+                    total: total, 
+                    solved: solved, 
+                    avg_hints: avgHints, 
+                    streak: streak,
+                    updated_at: new Date().toISOString()
+                }, { onConflict: 'name' });
+    
+            if (error) throw error;
+        } catch (e) {
+            console.error('Fehler beim Speichern:', e);
         }
+    }
+    
+    async function renderLeaderboard() {
+        const cont = document.getElementById('leaderboard-content');
+        const savedName = localStorage.getItem('leaderboardName');
+        const nameLabel = document.getElementById('leaderboard-current-name');
+        nameLabel.innerText = savedName ? `Du bist eingetragen als: ${savedName}` : '';
         
-        async function pushLeaderboardEntry(name) {
-            const total    = parseInt(localStorage.getItem('statTotal')  || '0');
-            const solved   = parseInt(localStorage.getItem('statSolved') || '0');
-            const hints    = parseInt(localStorage.getItem('statHints')  || '0');
-            const streak   = parseInt(localStorage.getItem('streak')     || '0');
-            const avgHints = solved > 0 ? parseFloat((hints / solved).toFixed(1)) : 0;
-        
-            try {
-                await window.storage.set(
-                    `leaderboard:${name}`,
-                    JSON.stringify({ name, total, solved, avgHints, streak, updatedAt: Date.now() }),
-                    true
-                );
-            } catch (e) {
-                console.error('Leaderboard-Fehler:', e);
+        cont.innerHTML = '<p style="color:#888;font-size:0.9rem">Lade Bestenliste...</p>';
+    
+        try {
+            // Daten von Supabase laden, sortiert nach gelösten Rätseln
+            const { data: entries, error } = await supabase
+                .from('leaderboard')
+                .select('*')
+                .order('solved', { ascending: false })
+                .limit(50);
+    
+            if (error) throw error;
+    
+            if (!entries || entries.length === 0) {
+                cont.innerHTML = '<p style="color:#888">Noch keine Einträge vorhanden.</p>';
+                return;
             }
-        }
-        
-        async function renderLeaderboard() {
-            const cont       = document.getElementById('leaderboard-content');
-            const savedName  = localStorage.getItem('leaderboardName');
-        
-            // Aktuellen Namen anzeigen
-            const nameLabel  = document.getElementById('leaderboard-current-name');
-            nameLabel.innerText = savedName ? `Du bist eingetragen als: ${savedName}` : '';
-        
-            cont.innerHTML = '<p style="color:#888;font-size:0.9rem">Lade Bestenliste...</p>';
-        
-            try {
-                const result = await window.storage.list('leaderboard:', true);
-                if (!result || !result.keys || result.keys.length === 0) {
-                    cont.innerHTML = '<p style="color:#888;font-size:0.9rem">Noch keine Einträge vorhanden.</p>';
-                    return;
-                }
-        
-                const entries = [];
-                for (const key of result.keys) {
-                    try {
-                        const entry = await window.storage.get(key, true);
-                        if (entry) entries.push(JSON.parse(entry.value));
-                    } catch (e) { /* Eintrag überspringen */ }
-                }
-        
-                // Sortieren nach gelösten Rätseln (absteigend)
-                entries.sort((a, b) => b.solved - a.solved || b.streak - a.streak);
-        
-                const table = `
-                    <table style="width:100%;border-collapse:collapse;font-size:0.88rem">
-                        <thead>
-                            <tr style="border-bottom:2px solid #e0e0e0;color:#888;text-transform:uppercase;letter-spacing:1px;font-size:0.75rem">
-                                <th style="padding:10px 6px;text-align:center">#</th>
-                                <th style="padding:10px 6px;text-align:left">Name</th>
-                                <th style="padding:10px 6px;text-align:center">Gespielt</th>
-                                <th style="padding:10px 6px;text-align:center">Gelöst</th>
-                                <th style="padding:10px 6px;text-align:center">Ø Hinweise</th>
-                                <th style="padding:10px 6px;text-align:center">Streak</th>
+    
+            const table = `
+                <table style="width:100%;border-collapse:collapse;font-size:0.85rem;margin-top:10px">
+                    <thead>
+                        <tr style="border-bottom:2px solid #eee;color:#888">
+                            <th style="padding:10px 6px">#</th>
+                            <th style="padding:10px 6px;text-align:left">Name</th>
+                            <th style="padding:10px 6px;text-align:center">Gesamt</th>
+                            <th style="padding:10px 6px;text-align:center">Gelöst</th>
+                            <th style="padding:10px 6px;text-align:center">Ø Hinweise</th>
+                            <th style="padding:10px 6px;text-align:center">Streak</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${entries.map((e, i) => `
+                            <tr style="border-bottom:1px solid #eee;${e.name === savedName ? 'background:#f0f7ff;font-weight:bold' : ''}">
+                                <td style="padding:10px 6px;text-align:center">${i + 1}</td>
+                                <td style="padding:10px 6px">${e.name === savedName ? '⭐ ' : ''}${e.name}</td>
+                                <td style="padding:10px 6px;text-align:center">${e.total}</td>
+                                <td style="padding:10px 6px;text-align:center">${e.solved}</td>
+                                <td style="padding:10px 6px;text-align:center">${e.avg_hints || '-'}</td>
+                                <td style="padding:10px 6px;text-align:center">🔥 ${e.streak}</td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            ${entries.map((e, i) => `
-                                <tr style="border-bottom:1px solid #eee;${e.name === savedName ? 'background:#f0f7ff;font-weight:bold' : ''}">
-                                    <td style="padding:10px 6px;text-align:center">${i + 1}</td>
-                                    <td style="padding:10px 6px">${e.name === savedName ? '⭐ ' : ''}${e.name}</td>
-                                    <td style="padding:10px 6px;text-align:center">${e.total}</td>
-                                    <td style="padding:10px 6px;text-align:center">${e.solved}</td>
-                                    <td style="padding:10px 6px;text-align:center">${e.avgHints || '-'}</td>
-                                    <td style="padding:10px 6px;text-align:center">🔥 ${e.streak}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>`;
-        
-                cont.innerHTML = table;
-        
-            } catch (e) {
-                cont.innerHTML = '<p style="color:#c0392b;font-size:0.9rem">Bestenliste konnte nicht geladen werden.</p>';
-            }
+                        `).join('')}
+                    </tbody>
+                </table>`;
+    
+            cont.innerHTML = table;
+    
+        } catch (e) {
+            console.error(e);
+            cont.innerHTML = '<p style="color:#c0392b;font-size:0.9rem">Bestenliste konnte nicht geladen werden.</p>';
         }
+    }
     
     // ===== START =====
     updateStreak(false);

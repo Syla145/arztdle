@@ -495,6 +495,25 @@
     ⚠️ <strong>Hinweis:</strong> Arztdle dient ausschließlich zu Lernzwecken für Medizinstudierende. Die Inhalte stellen keine medizinische Beratung dar und ersetzen nicht den Besuch beim Arzt.
 </div>
 
+    <div id="auth-modal" class="modal">
+    <div class="modal-content" style="max-width: 350px; text-align: center;">
+        <span class="close" onclick="closeAuth()">&times;</span>
+        <h2 id="auth-title">Leaderboard Login</h2>
+        <p id="auth-desc" style="font-size: 0.85rem; color: #666; margin-bottom: 20px;">
+            Erstelle ein Konto, um deine Stats dauerhaft zu speichern.
+        </p>
+        
+        <input type="email" id="auth-email" placeholder="E-Mail" style="width:100%; padding:10px; margin-bottom:10px; border:1px solid #ddd; border-radius:5px;">
+        <input type="password" id="auth-pw" placeholder="Passwort" style="width:100%; padding:10px; margin-bottom:10px; border:1px solid #ddd; border-radius:5px;">
+        
+        <button onclick="handleAuth()" id="auth-submit-btn" class="btn" style="width:100%; margin-top:10px;">Anmelden</button>
+        
+        <p id="auth-switch" onclick="toggleAuthMode()" style="margin-top:20px; font-size: 0.8rem; color: var(--accent); cursor: pointer; text-decoration: underline;">
+            Noch kein Konto? Hier registrieren
+        </p>
+    </div>
+</div>
+
 <footer>
     © Arztdle-Team | <a onclick="document.getElementById('impressum-modal').classList.add('visible')">Impressum</a>
 </footer>
@@ -1896,10 +1915,12 @@
                     msg.style.color = 'var(--error)';
                 }
                 startCountdown();
+                
+                checkUser();
             }
         }
     }
-
+    
     function initGame(puzzle) {
         revealedCount = 1;
         usedGuesses   = new Set();
@@ -2205,17 +2226,68 @@
 
     // ===== NEUE LEADERBOARD FUNKTIONEN =====
     
-    async function saveLeaderboardName() {
-        const input = document.getElementById('leaderboard-name-input');
-        const name = input.value.trim();
-        if (name.length < 2) return alert('Bitte einen gültigen Namen eingeben.');
-        
-        localStorage.setItem('leaderboardName', name);
-        await pushLeaderboardEntry(name);
+    let isSignUpMode = false;
+let currentUser = null;
+
+// Prüfen, ob User eingeloggt ist (beim Start)
+async function checkUser() {
+    const { data: { user } } = await sb.auth.getUser();
+    currentUser = user;
+    if (user) {
+        // Falls eingeloggt, Leaderboard-Name aus DB laden falls nicht im LocalStorage
+        if (!localStorage.getItem('leaderboardName')) {
+            const { data } = await sb.from('leaderboard').select('name').eq('user_id', user.id).single();
+            if (data) localStorage.setItem('leaderboardName', data.name);
+        }
+    }
+}
+
+// Modal öffnen/schließen
+function closeAuth() { document.getElementById('auth-modal').classList.remove('visible'); }
+function toggleAuthMode() {
+    isSignUpMode = !isSignUpMode;
+    document.getElementById('auth-title').innerText = isSignUpMode ? "Registrieren" : "Anmelden";
+    document.getElementById('auth-submit-btn').innerText = isSignUpMode ? "Konto erstellen" : "Anmelden";
+    document.getElementById('auth-switch').innerText = isSignUpMode ? "Schon ein Konto? Hier einloggen" : "Noch kein Konto? Hier registrieren";
+}
+
+// Login oder Registrierung ausführen
+async function handleAuth() {
+    const email = document.getElementById('auth-email').value;
+    const password = document.getElementById('auth-pw').value;
+    
+    if (password.length < 6) return alert("Passwort muss mindestens 6 Zeichen lang sein.");
+
+    try {
+        if (isSignUpMode) {
+            const { error } = await sb.auth.signUp({ email, password });
+            if (error) throw error;
+            alert("Erfolgreich registriert! Du kannst dich jetzt einloggen.");
+            toggleAuthMode();
+        } else {
+            const { data, error } = await sb.auth.signInWithPassword({ email, password });
+            if (error) throw error;
+            location.reload(); // Seite neu laden um Stats zu synchronisieren
+        }
+    } catch (e) {
+        alert("Fehler: " + e.message);
+    }
+}
+
+// Geänderte Leaderboard-Funktion: Prüft Login!
+function openLeaderboard() {
+    if (!currentUser) {
+        document.getElementById('auth-modal').classList.add('visible');
+    } else {
+        document.getElementById('leaderboard-modal').classList.add('visible');
         renderLeaderboard();
     }
-    
-    async function pushLeaderboardEntry(name) {
+}
+
+// Speichern mit USER_ID
+async function pushLeaderboardEntry(name) {
+    if (!currentUser) return;
+
     const total = parseInt(localStorage.getItem('statTotal') || '0');
     const solved = parseInt(localStorage.getItem('statSolved') || '0');
     const hints = parseInt(localStorage.getItem('statHints') || '0');
@@ -2223,123 +2295,21 @@
     const streak = parseInt(localStorage.getItem('streak') || '0');
 
     try {
-        const { error } = await sb // Hier stand vorher supabase
+        const { error } = await sb
             .from('leaderboard')
             .upsert({ 
+                user_id: currentUser.id, // Die ID von Auth!
                 name: name, 
                 total: total, 
                 solved: solved, 
                 avg_hints: avgHints, 
                 streak: streak,
                 updated_at: new Date().toISOString()
-            }, { onConflict: 'name' });
+            }, { onConflict: 'user_id' }); // Konfliktvermeidung über user_id
 
         if (error) throw error;
     } catch (e) {
-        console.error('Fehler beim Speichern:', e);
-    }
-}
-
-async function renderLeaderboard() {
-    const cont = document.getElementById('leaderboard-content');
-    const savedName = localStorage.getItem('leaderboardName');
-    const nameLabel = document.getElementById('leaderboard-current-name');
-    nameLabel.innerText = savedName ? `Du bist eingetragen als: ${savedName}` : '';
-    
-    cont.innerHTML = '<p style="color:#888;font-size:0.9rem">Lade Bestenliste...</p>';
-
-    try {
-        const { data: entries, error } = await sb // Hier stand vorher supabase
-            .from('leaderboard')
-            .select('*')
-            .order('solved', { ascending: false })
-            .limit(50);
-
-        if (error) throw error;
-
-        if (!entries || entries.length === 0) {
-            cont.innerHTML = '<p style="color:#888">Noch keine Einträge vorhanden.</p>';
-            return;
-        }
-
-        const table = `
-            <table style="width:100%;border-collapse:collapse;font-size:0.85rem;margin-top:10px">
-                <thead>
-                    <tr style="border-bottom:2px solid #eee;color:#888">
-                        <th style="padding:10px 6px">#</th>
-                        <th style="padding:10px 6px;text-align:left">Name</th>
-                        <th style="padding:10px 6px;text-align:center">Gesamt</th>
-                        <th style="padding:10px 6px;text-align:center">Gelöst</th>
-                        <th style="padding:10px 6px;text-align:center">Ø Hinweise</th>
-                        <th style="padding:10px 6px;text-align:center">Streak</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${entries.map((e, i) => `
-                        <tr style="border-bottom:1px solid #eee;${e.name === savedName ? 'background:#f0f7ff;font-weight:bold' : ''}">
-                            <td style="padding:10px 6px;text-align:center">${i + 1}</td>
-                            <td style="padding:10px 6px">${e.name === savedName ? '⭐ ' : ''}${e.name}</td>
-                            <td style="padding:10px 6px;text-align:center">${e.total}</td>
-                            <td style="padding:10px 6px;text-align:center">${e.solved}</td>
-                            <td style="padding:10px 6px;text-align:center">${e.avg_hints || '-'}</td>
-                            <td style="padding:10px 6px;text-align:center">🔥 ${e.streak}</td>
-                        </tr>
-                    `).join('')}
-                </tbody>
-            </table>`;
-
-        cont.innerHTML = table;
-
-    } catch (e) {
-        console.error(e);
-        cont.innerHTML = '<p style="color:#c0392b;font-size:0.9rem">Bestenliste konnte nicht geladen werden.</p>';
-    }
-}
-    
-    // ===== START =====
-    updateStreak(false);
-    loadDaily();
-
-    let currentUser = null;
-
-// Wird beim Laden der Seite aufgerufen
-async function checkUser() {
-    const { data: { user } } = await sb.auth.getUser();
-    currentUser = user;
-    if (user) {
-        // Wenn eingeloggt, Namen aus DB ziehen und Stats laden
-        restoreStatsFromCloud(user.id);
-    }
-}
-
-    let isSignUp = false;
-
-async function handleAuth() {
-    const email = document.getElementById('auth-email').value;
-    const password = document.getElementById('auth-pw').value;
-
-    if (isSignUp) {
-        const { data, error } = await sb.auth.signUp({ email, password });
-        if (error) alert(error.message);
-        else alert("Registrierung erfolgreich!");
-    } else {
-        const { data, error } = await sb.auth.signInWithPassword({ email, password });
-        if (error) alert(error.message);
-        else {
-            currentUser = data.user;
-            location.reload(); // Refresh um Stats zu laden
-        }
-    }
-}
-
-    function openLeaderboard() {
-    if (!currentUser) {
-        // Zeige Login-Modal, wenn nicht eingeloggt
-        document.getElementById('auth-modal').classList.add('visible');
-    } else {
-        // Zeige Leaderboard-Modal
-        document.getElementById('leaderboard-modal').classList.add('visible');
-        renderLeaderboard();
+        console.error('Speicherfehler:', e);
     }
 }
 </script>

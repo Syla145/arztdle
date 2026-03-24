@@ -2683,7 +2683,7 @@
 
 
     // ===== FORTSCHRITT SPEICHERN =====
-    function saveDailyProgress(finished, solved) {
+   function saveDailyProgress(finished, solved) {
         localStorage.setItem('dailyProgress', JSON.stringify({
             date:          getToday(),
             revealedCount: revealedCount,
@@ -2691,15 +2691,21 @@
             finished:      finished,
             solved:        solved
         }));
-
+    
         if (finished) {
             const done = JSON.parse(localStorage.getItem('completedPuzzles') || '{}');
             done[puzzles[currentPuzzleIndex].id]               = solved ? 'solved' : 'failed';
             done[puzzles[currentPuzzleIndex].id + '_attempts'] = revealedCount;
             localStorage.setItem('completedPuzzles', JSON.stringify(done));
-
+    
             const lbName = localStorage.getItem('leaderboardName');
             if (lbName && currentUser) pushLeaderboardEntry(lbName);
+    
+            // Versuch anonym in Supabase speichern
+            sb.from('puzzle_attempts').insert({
+                puzzle_id:  puzzles[currentPuzzleIndex].id,
+                hints_used: revealedCount
+            });
         }
     }
 
@@ -3068,7 +3074,7 @@
 
 
     // ===== ERGEBNIS POP-UP =====
-    function showResult(correct, solution, attempts) {
+    async function showResult(correct, solution, attempts) {
         document.getElementById('result-emoji').innerText    = correct ? '🎉' : '😔';
         document.getElementById('result-title').innerText    = correct ? 'Richtig!' : 'Nicht geschafft';
         document.getElementById('result-solution').innerText = correct
@@ -3077,6 +3083,21 @@
         document.getElementById('result-attempts').innerText = correct
             ? `Geschafft auf Versuch ${attempts} von 6`
             : `Du hast alle 6 Versuche aufgebraucht`;
+    
+        // Durchschnitt laden
+        const puzzleId = puzzles[currentPuzzleIndex].id;
+        const { data } = await sb
+            .from('puzzle_attempts')
+            .select('hints_used')
+            .eq('puzzle_id', puzzleId);
+    
+        if (data && data.length > 1) {
+            const avg = (data.reduce((s, r) => s + r.hints_used, 0) / data.length).toFixed(1);
+            const comparison = attempts < avg ? 'besser als' : attempts > avg ? 'schlechter als';
+            document.getElementById('result-attempts').innerText += 
+                `\nDurchschnitt aller Spieler: Hinweis ${avg} · Du warst ${comparison} der Durchschnitt`;
+        }
+    
         document.getElementById('result-modal').classList.add('visible');
     }
 

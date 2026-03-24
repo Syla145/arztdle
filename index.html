@@ -3084,18 +3084,21 @@
             ? `Geschafft auf Versuch ${attempts} von 6`
             : `Du hast alle 6 Versuche aufgebraucht`;
     
-        // Durchschnitt laden
-        const puzzleId = puzzles[currentPuzzleIndex].id;
-        const { data } = await sb
-            .from('puzzle_attempts')
-            .select('hints_used')
-            .eq('puzzle_id', puzzleId);
+        try {
+            const puzzleId = puzzles[currentPuzzleIndex].id;
+            const { data } = await sb
+                .from('puzzle_attempts')
+                .select('hints_used')
+                .eq('puzzle_id', puzzleId);
     
-        if (data && data.length > 1) {
-            const avg = (data.reduce((s, r) => s + r.hints_used, 0) / data.length).toFixed(1);
-            const comparison = attempts < avg ? 'besser als' : attempts > avg ? 'schlechter als';
-            document.getElementById('result-attempts').innerText += 
-                `\nDurchschnitt aller Spieler: Hinweis ${avg} · Du warst ${comparison} der Durchschnitt`;
+            if (data && data.length > 1) {
+                const avg = (data.reduce((s, r) => s + r.hints_used, 0) / data.length).toFixed(1);
+                const comparison = attempts < avg ? 'besser als' : attempts > avg ? 'schlechter als' : 'genau wie';
+                document.getElementById('result-attempts').innerText +=
+                    `\nDurchschnitt aller Spieler: Hinweis ${avg} · Du warst ${comparison} der Durchschnitt`;
+            }
+        } catch(e) {
+            console.warn('Durchschnitt konnte nicht geladen werden:', e);
         }
     
         document.getElementById('result-modal').classList.add('visible');

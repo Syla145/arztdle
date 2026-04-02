@@ -1,0 +1,1506 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Befundle</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        /* ===== MOBILE ===== */
+        @media (max-width: 500px) {
+            nav { gap: 15px; padding: 12px 10px; flex-wrap: wrap; justify-content: center; }
+            nav a { font-size: 0.8rem; }
+            #dark-mode-btn { position: static !important; order: 5; }
+        }
+
+        /* ===== VARIABLEN ===== */
+        :root {
+            --bg-blue:  #f0f7ff;
+            --text-dark: #2c3e50;
+            --accent:   #2a9d8f;
+            --success:  #27ae60;
+            --error:    #c0392b;
+        }
+
+        /* ===== BASIS ===== */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-blue);
+            margin: 0;
+            color: var(--text-dark);
+        }
+
+        /* ===== NAVIGATION ===== */
+        nav {
+            position: relative;
+            width: 100%;
+            background: #fff;
+            border-bottom: 1px solid #d1d9e0;
+            padding: 15px 0;
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        nav a {
+            text-decoration: none;
+            color: #666;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        nav a:hover { color: var(--accent); }
+
+        #dark-mode-btn {
+            position: absolute;
+            right: 20px;
+            background: none;
+            border: none;
+            font-size: 1.3rem;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+        }
+
+        /* ===== CONTAINER ===== */
+        .container {
+            max-width: 500px;
+            margin: 40px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .header-info {
+            color: #888;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        h1 { margin: 10px 0 25px 0; font-size: 1.5rem; }
+
+        /* ===== STREAK ===== */
+        .streak-banner {
+            font-size: 0.9rem;
+            color: #e8a472;
+            font-weight: bold;
+            margin-bottom: 5px;
+            min-height: 20px;
+        }
+
+        /* ===== HINWEISE ===== */
+        .hint-container { min-height: 100px; }
+
+        .hint-box {
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 12px;
+            text-align: left;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            display: none;
+            border-left: 5px solid;
+            animation: slideIn 0.4s ease-out;
+        }
+
+        .hint-box.visible { display: block; }
+
+        .hint-box:nth-child(1) { background: #fdecea; border-color: #e87a72; }
+        .hint-box:nth-child(2) { background: #fdf0e8; border-color: #e8a472; }
+        .hint-box:nth-child(3) { background: #fdf7e3; border-color: #e8cc72; }
+        .hint-box:nth-child(4) { background: #f5fae3; border-color: #a8cc5a; }
+        .hint-box:nth-child(5) { background: #edf7ee; border-color: #6bbf72; }
+        .hint-box:nth-child(6) { background: #e3f5e6; border-color: #3aad4e; }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to   { opacity: 1; transform: translateX(0); }
+        }
+
+        /* ===== EINGABE ===== */
+        .input-area {
+            position: relative;
+            margin-top: 30px;
+            display: flex;
+            gap: 10px;
+        }
+
+        input {
+            flex: 1;
+            padding: 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+            transition: border 0.3s;
+        }
+
+        input:focus { border-color: var(--accent); }
+
+        button#submit-btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 0 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+
+        button#submit-btn:hover { opacity: 0.9; }
+
+        /* ===== AUTOCOMPLETE ===== */
+        .autocomplete-suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: calc(100% - 100px);
+            background: white;
+            border: 1px solid #ddd;
+            border-top: none;
+            z-index: 100;
+            max-height: 200px;
+            overflow-y: auto;
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .autocomplete-suggestions:empty { display: none; }
+
+        .suggestion {
+            padding: 12px;
+            cursor: pointer;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+
+        .suggestion:hover { background: #f8f9fa; color: var(--accent); }
+
+        /* ===== STATUS & COUNTDOWN ===== */
+        #status-msg {
+            margin-top: 20px;
+            font-weight: bold;
+            min-height: 24px;
+        }
+
+        .countdown-box {
+            margin-top: 25px;
+            padding: 15px;
+            background: #f0f7ff;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            color: #888;
+        }
+
+        .countdown-box .time {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--accent);
+            margin-top: 5px;
+        }
+
+        /* ===== SEKTIONEN ===== */
+        .section { display: none; }
+        .active  { display: block; }
+
+        /* ===== ARCHIV ===== */
+        .archive-list { text-align: left; margin-top: 20px; }
+
+        .archive-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* ===== STATISTIK ===== */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stats-box {
+            background: #f0f7ff;
+            border-radius: 10px;
+            padding: 20px 10px;
+            text-align: center;
+        }
+
+        .stats-box .number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--accent);
+        }
+
+        .stats-box .label {
+            font-size: 0.8rem;
+            color: #888;
+            margin-top: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* ===== WARNHINWEIS ===== */
+        .warning-hint {
+            max-width: 500px;
+            margin: 0 auto 20px auto;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 5px solid #e8cc72;
+            font-size: 0.85rem;
+            text-align: center;
+            background: #fff3cd;
+        }
+
+        /* ===== FOOTER ===== */
+        footer {
+            text-align: center;
+            padding: 20px;
+            font-size: 0.75rem;
+            color: #999;
+            margin-top: 40px;
+        }
+
+        footer a {
+            color: #999;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+        footer a:hover { color: var(--accent); }
+
+        /* ===== MODALS ===== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.4);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-overlay.visible { display: flex; }
+
+        .modal-box {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 400px;
+            width: 90%;
+            font-size: 0.85rem;
+            line-height: 1.8;
+            text-align: left;
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 12px; right: 16px;
+            background: none;
+            border: none;
+            font-size: 1.3rem;
+            cursor: pointer;
+            color: #999;
+        }
+
+
+
+        .result-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.4);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .result-overlay.visible { display: flex; }
+
+        .result-box {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 380px;
+            width: 90%;
+            text-align: center;
+            position: relative;
+        }
+
+        .result-box .result-emoji  { font-size: 3rem; margin-bottom: 10px; }
+        .result-box h2             { margin: 10px 0; font-size: 1.4rem; }
+        .result-box .result-solution { font-size: 1rem; color: #888; margin: 10px 0 20px 0; }
+        .result-box .result-attempts { font-size: 0.9rem; font-weight: bold; color: var(--accent); margin-bottom: 20px; }
+
+        .result-btn { background: var(--accent); color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem; }
+        .result-btn:hover { opacity: 0.9; }
+
+        /* ===== LEADERBOARD NAME INPUT ===== */
+        #leaderboard-name-input { max-width: 200px; }
+        #leaderboard-save-btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        #leaderboard-save-btn:hover { opacity: 0.9; }
+
+        /* ===== DARK MODE ===== */
+        body.dark                           { background: #1a1a2e; color: #e0e0e0; }
+        body.dark .container                { background: #16213e; box-shadow: 0 8px 30px rgba(0,0,0,0.4); }
+        body.dark nav                       { background: #16213e; border-color: #2a2a4a; }
+        body.dark nav a                     { color: #aaa; }
+        body.dark nav a:hover               { color: var(--accent); }
+        body.dark input                     { background: #1a1a2e; border-color: #2a2a4a; color: #e0e0e0; }
+        body.dark .autocomplete-suggestions { background: #16213e; border-color: #2a2a4a; }
+        body.dark .suggestion               { color: #e0e0e0; }
+        body.dark .suggestion:hover         { background: #1a1a2e; }
+        body.dark .archive-item             { border-color: #2a2a4a; }
+        body.dark .countdown-box            { background: #1a1a2e; }
+        body.dark .countdown-box .time      { color: var(--accent); }
+        body.dark .stats-box                { background: #1a1a2e; }
+        body.dark .stats-box .number        { color: var(--accent); }
+        body.dark .streak-banner            { color: #e8a472; }
+        body.dark footer                    { color: #666; }
+        body.dark .modal-box                { background: #16213e; color: #e0e0e0; }
+        body.dark .result-box               { background: #16213e; color: #e0e0e0; }
+        body.dark .result-box .result-solution { color: #aaa; }
+
+        body.dark .hint-box:nth-child(1)    { background: #3d1f1e; border-color: #e87a72; }
+        body.dark .hint-box:nth-child(2)    { background: #3d2a1e; border-color: #e8a472; }
+        body.dark .hint-box:nth-child(3)    { background: #3d341e; border-color: #e8cc72; }
+        body.dark .hint-box:nth-child(4)    { background: #2a3d1e; border-color: #a8cc5a; }
+        body.dark .hint-box:nth-child(5)    { background: #1e3d22; border-color: #6bbf72; }
+        body.dark .hint-box:nth-child(6)    { background: #1a3d1e; border-color: #3aad4e; }
+
+        body.dark .warning-hint {
+            background: #3d3010;
+            border-color: #e8cc72;
+            color: #e0e0e0;
+        }
+
+        body.dark #leaderboard-content table tr { border-color: #2a2a4a; }
+        body.dark #leaderboard-content table tr[style*="background:#f0f7ff"] { 
+            background: #1a1a2e !important; 
+        }
+        body.dark #leaderboard-content table th { color: #aaa; border-color: #2a2a4a; }
+    </style>
+</head>
+<body>
+
+<!-- ===== NAVIGATION ===== -->
+<nav>
+    <a href="index.html" style="color:#2a9d8f;">🏠 Start</a>
+    <a onclick="showSection('play')">Heutiges Rätsel</a>
+    <a onclick="showSection('archive')">Archiv</a>
+    <a onclick="showSection('stats')">Statistik</a>
+    <a href="connections.html" style="color:#8b5cf6;">🔗 Verbundle</a>
+    <button id="dark-mode-btn" onclick="toggleDark()">🌙</button>
+</nav>
+
+<!-- ===== AUTH MODAL ===== -->
+
+<!-- ===== HAUPTCONTAINER ===== -->
+<div class="container">
+
+    <!-- SPIEL -->
+    <div id="play" class="section active">
+        <div class="header-info" id="meta-info">Befundle #?? - DATUM</div>
+        <div class="streak-banner" id="streak-banner"></div>
+        <h1>Was ist die Diagnose?</h1>
+        <div id="hint-wrapper" class="hint-container"></div>
+        <div class="input-area">
+            <input type="text" id="guess-input" placeholder="Diagnose suchen..." autocomplete="off">
+            <div id="suggestions" class="autocomplete-suggestions"></div>
+            <button id="submit-btn" onclick="checkAnswer()">Absenden</button>
+        </div>
+        <div id="status-msg"></div>
+        <div class="countdown-box" id="countdown-box" style="display:none">
+            <div>Nächstes Rätsel in</div>
+            <div class="time" id="countdown-timer">--:--:--</div>
+        </div>
+    </div>
+
+    <!-- ARCHIV -->
+    <div id="archive" class="section">
+        <h1>Vergangene Fälle</h1>
+        <div id="archive-content" class="archive-list"></div>
+    </div>
+
+    <!-- STATISTIK -->
+    <div id="stats" class="section">
+        <h1>Meine Statistik</h1>
+        <div id="stats-content"></div>
+    </div>
+
+    <!-- INFO -->
+    <div id="info" class="section">
+        <h1>Über Arztdle</h1>
+        <p>Dieses Tool hilft Medizinstudierenden, ihr diagnostisches Wissen zu trainieren.</p>
+        <p>Für jede Diagnose hast du 6 Tipps und somit 6 Versuche Zeit.</p>
+        <p>Jeden Tag erscheint ein neuer klinischer Fall. Viel Erfolg!</p>
+        <p style="font-size: 0.8rem; color: #999;">Erstellt für eine angehende Ärztin. ~A</p>
+    </div>
+</div>
+
+<!-- ===== IMPRESSUM MODAL ===== -->
+<div class="modal-overlay" id="impressum-modal" onclick="closeImpressum(event)">
+    <div class="modal-box">
+        <button class="modal-close" onclick="closeImpressum()">✕</button>
+        <h2 style="margin-top:0">Impressum</h2>
+        <strong>Angaben gemäß § 5 TMG</strong><br><br>
+        Josef Heininger<br>
+        Albert-Roßhaupter-Straße 109<br>
+        81369 München<br><br>
+        <strong>Kontakt</strong><br>
+        <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="fb91938c92959f9a9893bb9c9683d59f9e">[email&#160;protected]</a><br><br>
+        <strong>Haftungsausschluss</strong><br>
+        Arztdle dient ausschließlich zum spielerischen Lernen für Medizinstudierende. Die Inhalte stellen keine medizinische Beratung dar und ersetzen nicht den Besuch beim Arzt. Die meisten Beiträge sind mit KI erstellt. Bei Anpassungswünschen oder Vorschlägen melde dich gerne!
+    </div>
+</div>
+
+<!-- ===== ERGEBNIS MODAL ===== -->
+<div class="result-overlay" id="result-modal">
+    <div class="result-box">
+        <div class="result-emoji" id="result-emoji">🩺</div>
+        <h2 id="result-title"></h2>
+        <div class="result-solution" id="result-solution"></div>
+        <div class="result-attempts" id="result-attempts"></div>
+        <button class="result-btn" onclick="document.getElementById('result-modal').classList.remove('visible')">Schließen</button>
+    </div>
+</div>
+
+<!-- ===== WARNHINWEIS (CSS-Fix: kein Inline-Style mehr, alles über Klasse) ===== -->
+<div class="warning-hint">
+    ⚠️ <strong>Hinweis:</strong> Arztdle dient ausschließlich zum spielerischen Lernen für Medizinstudierende. Die Inhalte stellen keine medizinische Beratung dar und ersetzen nicht den Besuch beim Arzt. Die meisten Beiträge sind mit KI erstellt. Bei Anpassungswünschen oder Vorschlägen melde dich gerne!
+</div>
+
+<footer>
+    © Arztdle-Team | <a onclick="document.getElementById('impressum-modal').classList.add('visible')">Impressum</a>
+</footer>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+    // ===== SUPABASE INITIALISIERUNG =====
+    const SUPABASE_URL = 'https://tyxbabxjjrcqarqxmgoc.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR5eGJhYnhqanJjcWFycXhtZ29jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyNTcyODQsImV4cCI6MjA4OTgzMzI4NH0.4Tz5zSIClabWP6Q3RbhuRmdxvENAEV1mI3mZYczjOSw';
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    
+    // ===== DIAGNOSEN-LISTE =====
+    const allDiagnoses = [
+        "5α-Reduktase-Mangel", "Abdominelles Aortenaneurysma", "Abduzensparese",
+        "Abhängige Persönlichkeitsstörung", "Absenz-Epilepsie", "Abszess",
+        "Acanthosis nigricans", "Achalasie", "Achondroplasie", "Acne vulgaris",
+        "Adenokarzinom der Lunge", "Adenomatöse Polypen", "Adenomyose",
+        "Adenovirus-Infektion", "ADHS", "Adipositas", "Adultes T-Zell-Lymphom",
+        "AERD (Aspirin-exazerbierte Atemwegserkrankung)", "Äußere Hämorrhoiden",
+        "Afrikanische Schlafkrankheit (Trypanosoma brucei)", "Agoraphobie",
+        "Ahornsirupkrankheit (MSUD)", "AIDS", "Akne", "Akromegalie",
+        "Aktinische Keratose", "Aktinomykose", "Akustikusneurinom (Vestibularis-Schwannom)",
+        "Akute Appendizitis", "Akute Bronchitis",
+        "Akute disseminierte Enzephalomyelitis (ADEM)", "Akute Dystonie",
+        "Akute Extremitätenischämie", "Akute Gastritis", "Akute gastrointestinale Blutung",
+        "Akute intermittierende Porphyrie", "Akute interstitielle Nephritis (AIN)",
+        "Akute Leukämie", "Akute lymphoblastische Leukämie (ALL)",
+        "Akute Mesenterialischämie", "Akute myeloische Leukämie (AML)",
+        "Akute Nebenniereninsuffizienz", "Akute Pankreatitis",
+        "Akute Promyelozytenleukämie (APL)", "Akute Psychose", "Akute Pyelonephritis",
+        "Akute Sinusitis", "Akute Tonsillitis", "Akute Tubulusnekrose (ATN)",
+        "Akute Zystitis", "Akutes Abdomen", "Akutes Atemnotsyndrom (ARDS)",
+        "Akutes Koronarsyndrom", "Akutes Lungenödem", "Akutes Nierenversagen",
+        "Akutes Glaukom",
+        "Albinismus", "Alkoholentzug", "Alkoholgebrauchsstörung", "Alkoholintoxikation",
+        "Alkoholische Hepatitis", "Alkoholische Leberzirrhose", "Alkoholkrankheit",
+        "Allergie", "Allergische bronchopulmonale Aspergillose (ABPA)",
+        "Allergische Konjunktivitis", "Allergische Kontaktdermatitis", "Allergische Rhinitis",
+        "Alopecia areata", "Alpha-1-Antitrypsin-Mangel", "Alpha-Thalassämie",
+        "Alport-Syndrom", "Alzheimer-Demenz", "Alzheimer-Krankheit", "Amöbenruhr",
+        "Amphetaminentzug", "Amphetaminintoxikation", "Amyloidose",
+        "Amyotrophe Lateralsklerose (ALS)", "Anämie", "Anämie bei chronischer Erkrankung",
+        "Analfissur", "Anaphylaxie", "Anaphylaktischer Schock", "Anaplasmose",
+        "Anaplastisches Schilddrüsenkarzinom",
+        "Androgeninsensitivitätssyndrom", "Anenzephalie", "Angelman-Syndrom",
+        "Angina pectoris", "Angiodysplasie", "Angiosarkom",
+        "Ankylosierende Spondylitis (Morbus Bechterew)",
+        "Anomaler Ursprung der linken Koronararterie", "Anorexia nervosa",
+        "Anovulatorische Infertilität", "Anpassungsstörung", "Anteriore Uveitis (Iritis)",
+        "Anterograde Amnesie", "Antiphospholipid-Syndrom",
+        "Antipsychotika-induzierte Hyperprolaktinämie", "Antisoziale Persönlichkeitsstörung",
+        "Antithrombin-Mangel", "Anularpankreas", "Aortenaneurysma", "Aortendissektion",
+        "Aortenisthmusstenose", "Aortenklappeninsuffizienz", "Aortenklappenstenose",
+        "Aplastische Anämie", "Appendizitis", "Argininosukzinat-Lyase-Mangel",
+        "Aromatasemangel", "Arterielle Hypertonie", "Arteriovenöse Fistel", "Arthritis",
+        "Arthrose", "Artifizielle Störung (auferlegt auf andere Person)", "Asbestose",
+        "Ascaris-lumbricoides-Infektion", "Aseptische Knochennekrose", "Aseptische Meningitis",
+        "Asherman-Syndrom (Intrauterine Adhäsionen)", "Aspirationspneumonie",
+        "Asthma bronchiale", "Aszites", "Ataxia teleangiectatica", "Atelektase",
+        "Atheroembolische Erkrankung", "Atherosklerose", "Atonischer Anfall",
+        "Atopisches Ekzem", "Atraumatische Milzruptur", "Atriale Extrasystolen",
+        "Atrioventrikulärer Septumdefekt (AVSD)", "Atypische Depression",
+        "Aufmerksamkeitsdefizit-Hyperaktivitätsstörung (ADHS)", "Autismus",
+        "Autismus-Spektrum-Störung (ASS)", "Autoimmungastritis", "Autoimmunhepatitis",
+        "Autosomal-dominante polyzystische Nierenerkrankung (ADPKD)",
+        "Autosomal-dominante tubulointerstitielle Nierenerkrankung",
+        "Autosomal-rezessive polyzystische Nierenerkrankung (ARPKD)",
+        "AV-Block 2. Grades Typ I (Wenckebach)", "AV-Block 2. Grades Typ II (Mobitz II)",
+        "AV-Block 3. Grades (Totaler AV-Block)", "Axiale Hiatushernie", "Babesiose",
+        "Bacillus-cereus-Infektion", "Bakterielle Meningitis",
+        "Bakterielle Vaginose (Gardnerella vaginalis)", "Bandscheibenvorfall", "Bandverletzung",
+        "Barbituratintoxikation", "Barrett-Ösophagus", "Bartholin-Zyste (Bartholin-Abszess)",
+        "Bartter-Syndrom", "Basaliom", "Basalzellkarzinom", "Bazilläre Angiomatose",
+        "Bechterew-Krankheit", "Becker-Muskeldystrophie", "Beckwith-Wiedemann-Syndrom",
+        "Behçet-Krankheit", "Belastungsinkontinenz", "Benigne neonatale Hyperbilirubinämie",
+        "Benigne Prostatahyperplasie (BPH)",
+        "Benigner paroxysmaler Lagerungsschwindel (BPLS)", "Benzodiazepin-Intoxikation",
+        "Benzodiazepinentzug", "Bernard-Soulier-Syndrom", "Berylliose", "Beta-Thalassämie",
+        "Bettwanzenbefall (Cimex lectularius)", "Binge-Eating-Störung", "Bipolar-I-Störung",
+        "Bipolar-II-Störung", "Bipolare Störung", "Blasenentzündung", "Blasenmole",
+        "Blastomykose", "Bleivergiftung", "Bluthochdruck",
+        "Boerhaave-Syndrom (Ösophagusperforation)", "Borderline-Persönlichkeitsstörung",
+        "Borrelia recurrentis (Rückfallfieber)", "Borreliose", "Botulismus",
+        "Bovine spongiforme Enzephalopathie (BSE)", "Branchiogene Zyste", "Brenner-Tumor",
+        "Broca-Aphasie", "Bronchiales Karzinoidtumor", "Bronchialkarzinom", "Bronchiektasen",
+        "Bronchitis", "Brown-Séquard-Syndrom", "Brucellose", "Brugada-Syndrom",
+        "Bruton-Agammaglobulinämie", "Budd-Chiari-Syndrom", "Bulimia nervosa",
+        "Bullöses Pemphigoid", "Burkitt-Lymphom", "Burnout-Syndrom",
+        "Campylobacter-jejuni-Infektion", "Candidose (Candida albicans)", "Cannabisentzug",
+        "Cannabisintoxikation", "Caplan-Syndrom", "Cat-Eye-Syndrom", "Cauda-equina-Syndrom",
+        "Chagas-Krankheit (Trypanosoma cruzi)", "Charcot-Bouchard-Mikroaneurysma",
+        "Charcot-Marie-Tooth-Erkrankung", "CHARGE-Syndrom",
+        "Chassaignac-Lähmung (Radiusköpfchensubluxation)", "Chiari-I-Malformation",
+        "Chiari-II-Malformation", "Chikungunya-Fieber", "Chlamydia-trachomatis-Zervizitis",
+        "Chlamydien-Konjunktivitis des Neugeborenen", "Cholangiokarzinom", "Cholangitis",
+        "Choledocholithiasis (Aufsteigende Cholangitis)", "Cholelithiasis", "Cholera",
+        "Cholezystitis", "Chondroblastom", "Chondrosarkom", "Chordaesehnenruptur",
+        "Chorionkarzinom", "Chronisch obstruktive Lungenerkrankung (COPD)",
+        "Chronische Appendizitis", "Chronische atrophische Gastritis", "Chronische Bronchitis",
+        "Chronische Granulomatose", "Chronische Leukämie",
+        "Chronische lymphatische Leukämie (CLL)", "Chronische Mesenterialischämie",
+        "Chronische mukokutane Candidiasis", "Chronische myeloische Leukämie (CML)",
+        "Chronische Niereninsuffizienz", "Chronische Pankreatitis",
+        "Chronische Pyelonephritis", "Chronische Sinusitis", "Chronische Tonsillitis",
+        "Chronisches Nierenversagen", "Clonorchis sinensis (Chinesischer Leberegel)",
+        "Clostridioides-difficile-Kolitis", "Clostridium-botulinum-Intoxikation",
+        "Clostridium-tetani-Infektion (Tetanus)", "Clusterkopfschmerz", "Colitis ulcerosa",
+        "COPD", "Cor pulmonale", "Cornelia-de-Lange-Syndrom", "Coronavirus-Infektion",
+        "Corpus-luteum-Zyste", "Creutzfeldt-Jakob-Krankheit (CJK)", "Cri-du-chat-Syndrom",
+        "Crigler-Najjar-Syndrom Typ 1", "Cushing-Syndrom", "Cystische Fibrose",
+        "D-Transposition der großen Arterien", "Dandy-Walker-Malformation",
+        "De-Quervain-Tendovaginitis",
+        "De-Quervain-Thyreoiditis (Subakute granulomatöse Thyreoiditis)", "Dekubitusulkus",
+        "Delir", "Delirium tremens", "Demenz", "Dengue-Fieber", "Denys-Drash-Syndrom",
+        "Depersonalisations-/Derealisationsstörung", "Depression", "Depressive Episode",
+        "Dermatitis", "Dermatitis herpetiformis", "Dermatomyositis", "Dhat-Syndrom",
+        "Diabetes insipidus", "Diabetes mellitus Typ 1", "Diabetische Ketoazidose (DKA)",
+        "Diabetische Nephropathie", "Diabetische Retinopathie",
+        "Diabetisches Fußsyndrom (Neuropathisches Ulkus)", "Diamond-Blackfan-Anämie",
+        "Diastolische Dysfunktion", "Diffuse axonale Schädigung", "Diffuse kortikale Nekrose",
+        "Diffuse proliferative Glomerulonephritis", "Diffuser ösophagealer Spasmus",
+        "Diffuses großzelliges B-Zell-Lymphom (DLBCL)", "DiGeorge-Syndrom",
+        "Dilatative Kardiomyopathie", "Diphtherie (Corynebacterium diphtheriae)",
+        "Direkter Leistenbruch", "Disruptive Stimmungsregulationsstörung",
+        "Disseminierte Gonorrhoe", "Disseminierte intravasale Gerinnung (DIG)",
+        "Dissoziative Amnesie", "Dissoziative Identitätsstörung",
+        "Distale renale tubuläre Azidose (RTA Typ 1)", "Divertikulitis", "Divertikulose",
+        "Doppeltes Nierenbecken-Kelch-System", "Dottersacktumor",
+        "Double-Outlet-Rechter-Ventrikel (DORV)", "Down-Syndrom (Trisomie 21)",
+        "Dranginkontinenz", "Dressler-Syndrom", "Dubin-Johnson-Syndrom",
+        "Duchenne-Muskeldystrophie", "Ductus-mammarius-Ektasie",
+        "Dünndarm-Bakterienüberwucherung (SIBO)", "Dünndarmobstruktion",
+        "Duktales Karzinom in situ (DCIS)", "Dumping-Syndrom", "Dupuytren-Kontraktur",
+        "Dysgerminom", "Dysthymie (Persistierende depressive Störung)", "Ebola-Viruskrankheit",
+        "Ebstein-Anomalie", "Echinokokkose (Echinococcus granulosus)", "Echovirus-Infektion",
+        "Edwards-Syndrom (Trisomie 18)", "Ehrlichiose", "Eisenmangelanämie",
+        "Eisenmenger-Syndrom", "Eisenvergiftung", "Eklampsie",
+        "Ektope Schwangerschaft", "Ektopes Schilddrüsengewebe (Zungenschilddrüse)",
+        "Embolie", "Embryonales Karzinom", "Endemischer Typhus (Rickettsia typhi)",
+        "Endokarditis", "Endometriose", "Endometritis", "Endometriumhyperplasie",
+        "Endometriumkarzinom", "Entamoeba-histolytica-Infektion", "Enterokokkeninfektion",
+        "Entzündliches Mammakarzinom", "Enuresis", "Enzephalitis", "Eosinophile Granulomatose",
+        "Eosinophile Granulomatose mit Polyangiitis (Churg-Strauss-Syndrom)",
+        "Eosinophile Ösophagitis", "Ependymom",
+        "Epidemischer Fleckfieber (Rickettsia prowazekii)", "Epididymitis", "Epiduralhämatom",
+        "Epilepsie", "Epileptischer Anfall",
+        "Epiphyseolysis capitis femoris (ECF)", "Epitheliale Hyperplasie der Brust",
+        "Epstein-Barr-Virus-Infektion (EBV)", "Erkältungs-Coronavirus-Infektion", "Erysipel",
+        "Erythema multiforme", "Erythema nodosum", "Escherichia-coli-Harnwegsinfektion",
+        "Escherichia-coli-Prostatitis", "Essentielle Hypertonie", "Essentielle Thrombozythämie",
+        "Essenzieller Tremor", "Euthyreoter-Krank-Syndrom", "Ewing-Sarkom",
+        "Ex-vacuo-Ventrikulomegalie", "Exogene Thyreotoxikose", "Exokrine Pankreasinsuffizienz",
+        "Extragonadaler Keimzelltumor", "Extrammärer Morbus Paget", "Extrauteringravidität",
+        "Faktor-V-Leiden-Mutation", "Fallot-Tetralogie",
+        "Familiäre adenomatöse Polyposis (FAP)",
+        "Familiäre Chylomikronämie (Lipoproteinlipase-Mangel)",
+        "Familiäre hypokalziurische Hyperkalzämie", "Fanconi-Anämie",
+        "Fanconi-Syndrom (Proximale renale tubuläre Azidose, RTA Typ 2)", "Favismus",
+        "Fazialisparese (Bell-Parese)", "Felty-Syndrom", "Femoralhernie",
+        "Fetales Hydantoin-Syndrom", "Fettleber", "Fettnekrose der Brust",
+        "Feuchte Makuladegeneration", "Fibrinöse Perikarditis", "Fibroadenom",
+        "Fibromuskuläre Dysplasie", "Fibromyalgie", "Fibrozystische Mastopathie",
+        "Fischbandwurm (Diphyllobothrium latum)", "Fokal-segmentale Glomerulosklerose (FSGS)",
+        "Fokale noduläre Hyperplasie", "Fokaler Anfall mit eingeschränktem Bewusstsein",
+        "Fokaler bewusster Anfall (einfacher Partialanfall)", "Follikelzyste des Ovars",
+        "Follikuläres Lymphom", "Follikuläres Schilddrüsenkarzinom", "Foster-Kennedy-Syndrom",
+        "Fragiles-X-Syndrom", "Fraktur", "Friedreich-Ataxie", "Frontotemporale Demenz",
+        "Frühgeborenen-Retinopathie", "Frühsommer-Meningoenzephalitis",
+        "Funktionelle hypothalamische Amenorrhö", "G6PD-Mangel", "Galaktosämie",
+        "Gallengangsatresie", "Gallenkolik (Cholelithiasis)", "Gallensteine", "Ganglionzyste",
+        "Gardner-Syndrom", "Gasgangrän (Clostridium perfringens)", "Gastritis",
+        "Gastroenteritis", "Gastroösophageale Refluxkrankheit (GERD)", "Gaucher-Erkrankung",
+        "Gelbfieber", "Gemischte Kryoglobulinämie", "Generalisierte Angststörung",
+        "Geschlechtsdysphorie", "Gestationshypertonie", "Giardiasis", "Gicht", "Gichtanfall",
+        "Gigantismus", "Gilbert-Syndrom", "Gitelman-Syndrom", "Glanzmann-Thrombasthenie",
+        "Glaukom", "Glioblastoma multiforme", "Globale Aphasie", "Glomustumor", "Glukagonom",
+        "Glykogenspeicherkrankheit Typ I (von-Gierke-Krankheit)",
+        "Glykogenspeicherkrankheit Typ II (Morbus Pompe)",
+        "Glykogenspeicherkrankheit Typ III (Morbus Cori)",
+        "Glykogenspeicherkrankheit Typ IV (Andersen-Krankheit)",
+        "Glykogenspeicherkrankheit Typ V (McArdle-Erkrankung)", "GM1-Gangliosidose",
+        "Gonorrhoe-Prostatitis", "Goodpasture-Syndrom",
+        "Granulomatose mit Polyangiitis (Wegener-Granulomatose)", "Granulosazelltumor des Ovars",
+        "Großzelliges Lungenkarzinom", "Grünholzfraktur", "Gürtelrose (Herpes zoster)",
+        "Guillain-Barré-Syndrom", "Gynäkomastie", "Haarzell-Leukämie", "Hämangioblastom",
+        "Hämochromatose", "Hämoglobin-C-Krankheit", "Hämolytisch-urämisches Syndrom (EHEC)",
+        "Hämolytische Anämie bei Infektion", "Hämophilie A",
+        "Hämophilie B (Christmas-Krankheit)", "Hämophilie C",
+        "Haemophilus-influenzae-Infektion", "Hakenwurm-Infektion (Ancylostoma/Necator)",
+        "Hand-Fuß-Mund-Krankheit (Coxsackievirus)", "Hantavirus-Infektion", "Harnwegsinfekt",
+        "Hashimoto-Thyreoiditis", "HELLP-Syndrom",
+        "Heparininduzierte Thrombozytopenie (HIT)", "Hepatische Enzephalopathie",
+        "Hepatisches Angiosarkom", "Hepatisches Hämangiom", "Hepatitis A", "Hepatitis B",
+        "Hepatitis C", "Hepatitis E", "Hepatitis-D-Virus (HDV)", "Hepatozelluläres Adenom",
+        "Hepatozelluläres Karzinom (HCC)", "Hereditäre Fruktoseintoleranz",
+        "Hereditäre Hämochromatose", "Hereditäre Sphärozytose",
+        "Herpes-simplex-Virus 2 (HSV-2)", "Herpes-simplex-Virus-1-Infektion (HSV-1)",
+        "Herzinfarkt", "Herzinsuffizienz", "Herzklappenfehler", "Herzrhythmusstörung",
+        "Herzschrittmacher-Dysfunktion", "Herzstillstand", "Herztamponade",
+        "Hidradenitis suppurativa", "Histoplasmose", "Histrionische Persönlichkeitsstörung",
+        "Hitzschlag", "HIV", "HIV-assoziierte Demenz", "Hodenentzündung", "Hodentorsion",
+        "Hodgkin-Lymphom", "Holiday-Heart-Syndrom (alkoholinduziertes Vorhofflimmern)",
+        "Holoprosenzephalie", "Homozystinurie", "Horner-Syndrom",
+        "HPV-Kondylome (Condylomata acuminata)", "HPV-Larynxpapillomatose",
+        "Hüftdysplasie (Entwicklungsdysplasie der Hüfte)", "Hüftschnupfen", "Hufeisenniere",
+        "Humanes Immundefizienzvirus (HIV)", "Hunter-Syndrom", "Huntington-Krankheit",
+        "Hurler-Syndrom", "Hydronephrose", "Hydrozele", "Hymenalatresie", "Hyper-IgE-Syndrom",
+        "Hyper-IgM-Syndrom (CD40-Ligand-Mangel)", "Hypercalcämie", "Hypercholesterinämie",
+        "Hyperkaliämische tubuläre Azidose (RTA Typ 4)", "Hyperlipidämie", 
+        "Hyperosmolares hyperglykämisches Syndrom (HHS)", "Hyperosmolares Koma",
+        "Hyperplastische Polypen", "Hypersensitivitätspneumonitis",
+        "Hypertensive Herzerkrankung", "Hypertensive Krise", "Hypertensive Retinopathie",
+        "Hyperthyreose", "Hypertriglyzeridämie", "Hypertrophe Kardiomyopathie (HKMP)",
+        "Hypnagoge Halluzinationen", "Hypnopompe Halluzinationen",
+        "Hypogonadotroper Hypogonadismus", "Hypomane Episode", "Hypoparathyreoidismus",
+        "Hypophysenadenom", "Hypophysenapoplexie", "Hypophysenprolaktinom", "Hypothyreose",
+        "Hypovolämischer Schock", "Ichthyosis vulgaris",
+        "Idiopathische intrakranielle Hypertension (Pseudotumor cerebri)",
+        "Idiopathische pulmonale Fibrose", "IgA-Nephropathie (Berger-Krankheit)",
+        "IgA-Vaskulitis (Henoch-Schönlein-Purpura)", "IgG4-assoziierte Erkrankung", "Ileus",
+        "Iliotibialband-Syndrom", "Immunthrombozytopenie", "Impetigo contagiosa",
+        "Indirekter Leistenbruch", "Induratio penis plastica", "Infantiles Hämangiom",
+        "Infektiöse Endokarditis", "Infektionsassoziierte Glomerulonephritis", "Influenza",
+        "Influenzavirus-Infektion", "Innere Hämorrhoiden", "Insomnie",
+        "Instabile Angina pectoris", "Insulinom", "Intellektuelle Entwicklungsstörung",
+        "Intermittierende explosible Störung", "Internukleäre Ophthalmoplegie",
+        "Interstitielle Pneumonie (atypische Pneumonie)", "Interventrikuläre Septumruptur",
+        "Intraduktales Papillom", "Intrazerebrale Blutung", "Invagination (Intussuszeption)",
+        "Invasive Aspergillose", "Invasives duktales Karzinom", "Invasives lobuläres Karzinom",
+        "Invasives Zervixkarzinom", "Ischämische Kolitis", "Ischämischer Priapismus",
+        "Ischämischer Schlaganfall – Arteria basilaris",
+        "Ischämischer Schlaganfall – Arteria cerebelli inferior anterior (AICA)",
+        "Ischämischer Schlaganfall – Arteria cerebelli inferior posterior (PICA)",
+        "Ischämischer Schlaganfall – Arteria cerebri anterior (ACA)",
+        "Ischämischer Schlaganfall – Arteria cerebri media (ACM)",
+        "Ischämischer Schlaganfall – Arteria cerebri posterior (ACP)",
+        "Ischämischer Schlaganfall – Arteria spinalis anterior",
+        "Ischämischer Schlaganfall – Lenticulostriatalarterien",
+        "JC-Virus-Infektion (Polyomavirus)", "Jod-Basedow-Phänomen",
+        "Jodmangel-Hypothyreose", "Juvenile Polyposis-Syndrom", "Kälteagglutininkrankheit",
+        "Kallmann-Syndrom", "Kalziumpyrophosphat-Depositionskrankheit (Pseudogicht)",
+        "Kammerflimmern", "Kaposi-Sarkom (HHV-8)", "Kardiales Myxom", "Kardiogener Schock",
+        "Karies", "Karotissinushypersensitivität", "Karpaltunnelsyndrom",
+        "Kartagener-Syndrom (Primäre Ziliendyskinesie)", "Karzinoid-Syndrom", "Katarakt",
+        "Katzenkratzkrankheit (Bartonella henselae)", "Kavernöses Sinussyndrom",
+        "Kawasaki-Syndrom", "Keimstrang-Fibrom", "Keimstrangtumor Thekom",
+        "Keratosis pilaris", "Keuchhusten (Bordetella pertussis)", "Kirschangiom",
+        "Klavikulafraktur", "Klebsiella-pneumoniae-Infektion", "Kleinzelliges Lungenkarzinom",
+        "Klinefelter-Syndrom", "Kniegelenksbandverletzung (VKB, MCL, Menisken)",
+        "Körperdysmorphe Störung", "Körperliche Kindesmisshandlung", "Koffeinintoxikation",
+        "Kohlenmonoxidvergiftung", "Kokainentzug", "Kokainintoxikation", "Kokzidioidomykose",
+        "Kolonkarzinom", "Kolorektales Karzinom", "Kommunizierender Hydrozephalus",
+        "Kompartmentsyndrom", "Komplexes regionales Schmerzsyndrom (CRPS)",
+        "Kongenitale Hypothyreose (Kretinismus)", "Kongenitale Nebennierenhyperplasie",
+        "Konjunktivitis", "Konstriktive Perikarditis", "Konus-Medullaris-Syndrom",
+        "Konversionsstörung", "Koronararterienspasmen (Prinzmetal-Angina)",
+        "Korsakow-Syndrom", "Kostochondritis", "Krabbe-Erkrankung", "Krampfadern",
+        "Kraniopharyngeom", "Krankheitsangststörung",
+        "Kryptogene organisierende Pneumonie (KOP)", "Kryptokokkose (Cryptococcus neoformans)",
+        "Kryptorchismus", "Kryptosporidiose", "Kubitaltunnelsyndrom (Ulnarisneuropathie)",
+        "Kuru", "Kurzdarmsyndrom", "Kurze psychotische Störung",
+        "Kutane leukozytoklastische Vaskulitis", "Laktationsmastitis", "Laktoseintoleranz",
+        "Lambert-Eaton-Syndrom", "Langerhans-Zell-Histiozytose", "Langes-QT-Syndrom",
+        "Laterale Epikondylitis (Tennisellenbogen)", "Leberversagen", "Leberzirrhose",
+        "Legasthenie", "Legionärskrankheit", "Legionellose", "Leiomyom (Uterusmyom)",
+        "Leishmaniose", "Leitungsaphasie", "Lepra", "Leptospirose", "Lesch-Nyhan-Syndrom",
+        "Leukämie", "Leukozyten-Adhäsionsdefizienz (LAD)", "Lewy-Körper-Demenz",
+        "Leydig-Zelltumor des Hodens", "Lichen planus", "Lichen sclerosus",
+        "Lichen simplex chronicus", "Liddle-Syndrom", "Linksschenkelblock",
+        "Linksventrikuläre Hypertrophie (LVH)", "Linsenluxation", "Lipom", "Lissenzephalie",
+        "Listeria-monocytogenes-Infektion", "Lithiumtoxizität", "Loa-loa-Filariose",
+        "Lobuläres Karzinom in situ (LCIS)", "LSD-Intoxikation", "Ludwig-Angina",
+        "Lumbarer Bandscheibenvorfall", "Lungenabszess", "Lungenembolie (LE)", "Lungenemphysem",
+        "Lungenentzündung", "Lungenkontusion", "Lupus erythematodes", "Luxation",
+        "Lyme-Borreliose (Borrelia burgdorferi)", "Lymphatische Filariose (Wuchereria bancrofti)",
+        "Lynch-Syndrom (HNPCC)", "Magenkarzinom", "Major Depression (MDD)",
+        "Major Depression mit psychotischen Merkmalen", "Makroangiopathische hämolytische Anämie",
+        "Malaria", "Maligne Hyperthermie", "Malignes Melanom", "Malignes neuroleptisches Syndrom (MNS)",
+        "Mallory-Weiss-Syndrom", "Malrotation des Darms", "Mammakarzinom", "Manische Episode",
+        "Mantelzell-Lymphom", "Marcus-Gunn-Pupille (Relatives afferentes Pupillendefizit)",
+        "Marginalzonenlymphom", "Masern", "Mayer-Rokitansky-Küster-Hauser-Syndrom",
+        "MCAD-Mangel", "McCune-Albright-Syndrom", "MDMA-Intoxikation", "Meckel-Divertikel",
+        "Mediale Epikondylitis (Golferellenbogen)",
+        "Medialer Tibiakantensyndrom (Schienbeinkantensyndrom)", "Mediastinitis",
+        "Medikamenteninduzierte hämolytische Anämie", "Medulläres Schilddrüsenkarzinom",
+        "Medulloblastom", "Megaloblastäre Anämie (Vitamin-B12-Mangel)", "Melanom",
+        "Melanom maligne", "Melanozytärer Nävus", "Melasma", "Membranöse Nephropathie",
+        "Membranoproliferative Glomerulonephritis", "MEN1", "MEN2A", "MEN2B", "Meningeom",
+        "Meningitis", "Meningozele", "Menopause", "Mesotheliom",
+        "Metabolisch assoziierte Fettlebererkrankung (MAFLD)",
+        "Metabolisches Syndrom",
+        "Metachromatische Leukodystrophie (MLD)", "Migräne",
+        "Mikroangiopathische hämolytische Anämie", "Mikroskopische Kolitis",
+        "Mikroskopische Polyangiitis (MPA)", "Miller-Fisher-Syndrom", "Milzabszess",
+        "Milzbrand (Bacillus anthracis)", "Minimal-Change-Glomerulopathie",
+        "Mischkollagenose (MCTD)", "Mitralklappeninsuffizienz", "Mitralklappenprolaps",
+        "Mitralklappenstenose", "Mitralklappensuffizienz", "Mitteldarm-Volvulus",
+        "Mittelhandfraktur (Boxerfraktur)", "Molluscum contagiosum",
+        "Monoklonale Gammopathie unklarer Signifikanz (MGUS)", "Morbus Addison",
+        "Morbus Basedow", "Morbus Bechterew", "Morbus Crohn", "Morbus Cushing",
+        "Morbus Fabry", "Morbus Hirschsprung", "Morbus Legg-Calvé-Perthes", "Morbus Ménière", "Morbus Paget",
+        "Morbus Paget der Brust", "Morbus Parkinson", "Morbus Whipple", "Morbus Wilson",
+        "Morton-Neurom", "Mukoepidermoidkarzinom", "Mukormykose (Mucor/Rhizopus)",
+        "Mukosale Polypen", "Multifokale atriale Tachykardie (MAT)", "Multiple Sklerose",
+        "Multiples Myelom", "Multizystisch-dysplastische Niere", "Mumps (Paramyxovirus)",
+        "MUTYH-assoziierte Polyposis", "Muzinöses Karzinom", "Muzinöses Zystadenom",
+        "Myasthenia gravis", "Mycobacterium tuberculosis", "Mycoplasma-pneumoniae-Pneumonie",
+        "Mycosis fungoides (Kutanes T-Zell-Lymphom)", "Myelodysplastisches Syndrom",
+        "Myelofibrose", "Myelomeningozele", "Myeloschisis", "Myokarditis",
+        "Myokardkontusion", "Myoklonischer Anfall", "Myositis ossificans", "Myotone Dystrophie",
+        "Ménétrier-Erkrankung", "Naegleria-fowleri-Enzephalitis", "Narbenhernie",
+        "Narkolepsie", "Narzisstische Persönlichkeitsstörung",
+        "Neisseria-gonorrhoeae-Zervizitis", "Neisseria-meningitidis-Infektion",
+        "Nekrotisierende Enterokolitis", "Neonatale Gonokokken-Konjunktivitis",
+        "Neonatale intraventrikuläre Blutung", "Nephritisches Syndrom",
+        "Nephroblastom (Wilms-Tumor)", "Nephrogener Diabetes insipidus", "Nephrolithiasis",
+        "Nephrotisches Syndrom", "Netzhautablösung", "Neuroblastom",
+        "Neurodermitis (Atopische Dermatitis)", "Neurofibromatose Typ I",
+        "Neurofibromatose Typ II", "Nicht-megaloblastäre Anämie",
+        "Nichtkommunizierender Hydrozephalus", "Nichtproliferative diabetische Retinopathie",
+        "Nichtsezernierendes Hypophysenadenom", "Niemann-Pick-Erkrankung", "Niereninsuffizienz",
+        "Nierensteine (Nephrolithiasis)", "Nierenzellkarzinom", "Nikotinentzug",
+        "Nikotinintoxikation", "Nikotinvergiftung", "Nokardiose", "Normaldruckhydrozephalus",
+        "Norovirus", "Norovirus-Gastroenteritis", "NSTEMI",
+        "Obesitas-Hypoventilations-Syndrom", "Obstruktive Lungenerkrankung",
+        "Obstruktive Schlafapnoe (OSA)", "Obstruktiver Schock", "Ösophagusadenokarzinom",
+        "Ösophaguskandidose", "Ösophaguskarzinom", "Ösophagusvarizen",
+        "Östliches Pferdeenzephalitisvirus", "Offene Augapfelverletzung", "Offenwinkelglaukom",
+        "Okulomotoriusparese (N.-III.-Parese)", "Oligodendrogliom",
+        "Onchozerkose (Flussblindheit)", "Opioidentzug", "Opioidintoxikation",
+        "Oppositionelles Trotzverhalten", "Orale Haarleukoplakie", "Orchitis",
+        "Ornithin-Transcarbamylase-Mangel", "Orotazidurie", "Orthostatische Hypotonie",
+        "Osgood-Schlatter-Krankheit", "Osteitis deformans (Morbus Paget)", "Osteoblastom",
+        "Osteochondrom", "Osteogenesis imperfecta", "Osteoides Osteom", "Osteomalazie",
+        "Osteomyelitis", "Osteopetrose", "Osteoporose", "Osteosarkom", "Otitis externa",
+        "Otitis media", "Ovarialkarzinom", "Ovarialzyste", "Ovarientorsion",
+        "Ovotestikuläre Störung der Geschlechtsentwicklung",
+        "Oxyuriasis (Enterobius vermicularis)", "Paget-von-Schroetter-Syndrom",
+        "Pancoast-Tumor", "Pancreas divisum", "Panikattacke", "Panikstörung",
+        "Pankreasadenokarzinom", "Pankreaskarzinom", "Pankreatitis",
+        "Papilläres Schilddrüsenkarzinom", "Paragangliom",
+        "Parainfluenza-Virusinfektion (Krupp)", "Parakokzidioidomykose",
+        "Paralytischer Ileus (Ogilvie-Syndrom)", "Paranoide Persönlichkeitsstörung",
+        "Paraösophageale Hiatushernie", "Parkinson", "Parkinson-Krankheit",
+        "Paroxysmale nächtliche Hämoglobinurie",
+        "Paroxysmale supraventrikuläre Tachykardie (PSVT)", "Parvovirus B19",
+        "Pasteurella-multocida-Infektion", "Patau-Syndrom (Trisomie 13)",
+        "Patellofemorales Schmerzsyndrom", "Pathologisches Glücksspiel",
+        "Pauci-immune Glomerulonephritis", "Pavor nocturnus (Schlafterror)",
+        "Pedikulose (Läusebefall)", "Pelvic Inflammatory Disease (PID)", "Pemphigus vulgaris",
+        "Penisplattenepithelkarzinom", "Perikarditis", "Peptisches Ulkus", "Peripartale Depression",
+        "Periphere arterielle Verschlusskrankheit (pAVK)", "Peripherer Schwindel",
+        "Peritonitis", "Peritonsillarer Abszess", "Persistierender Ductus arteriosus (PDA)",
+        "Persistierendes Foramen ovale (PFO)", "Pest (Yersinia pestis)",
+        "Peutz-Jeghers-Syndrom", "Pfeiffersches Drüsenfieber", "Phäochromozytom",
+        "Phantomschmerz", "Phencyclidin-Intoxikation (PCP)", "Phenylketonurie (PKU)",
+        "Phobie", "Phylloides-Tumor", "Pica", "Pilozytisches Astrozytom", "Pityriasis rosea",
+        "Pityriasis versicolor", "Placenta praevia", "Placenta-accreta-Spektrum",
+        "Plantarfasziitis", "Plasmodium-falciparum-Malaria", "Plasmodium-malariae-Malaria",
+        "Plasmodium-vivax/ovale-Malaria", "Plattenepithelkarzinom",
+        "Plattenepithelkarzinom der Harnblase", "Plattenepithelkarzinom der Haut",
+        "Plattenepithelkarzinom der Lunge", "Plattenepithelkarzinom des Ösophagus",
+        "Plazenta praevia", "Plazentalösung", "Pleomorphes Adenom", "Pleuraerguss",
+        "Plummer-Vinson-Syndrom", "Pneumocystis-jirovecii-Pneumonie (PCP)",
+        "Pneumokokkenpneumonie (Streptococcus pneumoniae)", "Pneumomediastinum", "Pneumonie",
+        "Pneumothorax", "Poliomyelitis", "Poliovirus-Infektion", "Polyarteriitis nodosa (PAN)",
+        "Polycythaemia vera", "Polymyalgia rheumatica (PMR)", "Polymyositis",
+        "Polyzystisches Ovarialsyndrom (PCOS)", "Poplitealzyste (Baker-Zyste)",
+        "Porphyria cutanea tarda", "Porphyrie", "Portale Hypertension", "Porzellan-Gallenblase",
+        "Posteriore Urethralklappe", "Postinfarkt-Papillarmuskelruptur",
+        "Postinfarkt-Tamponade", "Postinfarkt-Ventrikelfreiwandruptur", "Postpartale Blues",
+        "Postpartale Psychose", "Poststreptokokken-Glomerulonephritis",
+        "Posttraumatische Belastungsstörung (PTBS)", "Potter-Sequenz", "Prader-Willi-Syndrom",
+        "Präeklampsie", "Präpatellarbursitis", "Prärenales akutes Nierenversagen",
+        "Presbyakusis", "Presbyopie", "Primär biliäre Cholangitis",
+        "Primär sklerosierende Cholangitis (PSC)", "Primäre Dysmenorrhö",
+        "Primäre Hypertonie", "Primäre Nebenniereninsuffizienz (Morbus Addison)",
+        "Primäre Ovarialinsuffizienz", "Primäre psychogene Polydipsie",
+        "Primärer Hyperaldosteronismus (Conn-Syndrom)", "Primärer Hyperparathyreoidismus",
+        "Primärer Spontanpneumothorax", "Primäres Hodenlymphom", "Primäres ZNS-Lymphom",
+        "Progressive multifokale Leukoenzephalopathie (PML)", "Proktitis",
+        "Proliferative diabetische Retinopathie", "Prostatakarzinom", "Protein-C/S-Mangel",
+        "Prothrombin-G20210A-Mutation", "Pseudoachalasie", "Pseudofollikulitis barbae",
+        "Pseudohypoparathyreoidismus Typ 1A", "Pseudomonas-aeruginosa-Infektion",
+        "Pseudopseudohypoparathyreoidismus", "Psittakose (Chlamydophila psittaci)",
+        "Psoasabszess", "Psoriasis", "Psoriasis-Arthritis", "Pulmonale Hypertonie",
+        "Pulmonalklappeninsuffizienz", "Pulmonalklappenstenose", "Pulsus paradoxus",
+        "Pyelonephritis", "Pylorusstenose", "Pyogener Leberabszess", "Pyogenes Granulom",
+        "Pyruvatkinasemangel", "Q-Fieber (Coxiella burnetii)", "Rachitis",
+        "Radialisneuropathie (Parkbanklähmung)", "Ramsay-Hunt-Syndrom",
+        "Rapid-progressive Glomerulonephritis (RPGN)", "Raynaud-Phänomen", "Raynaud-Syndrom",
+        "Reaktive Arthritis", "Rechtsschenkelblock", "Rechtsventrikuläre Hypertrophie (RVH)",
+        "Refeeding-Syndrom", "Refluxkrankheit", "Reifes zystisches Teratom",
+        "Reizdarmsyndrom", "Rektusmuskel-Diastase", "Renale Osteodystrophie",
+        "Renale Papillennekrose", "Renales Onkozytom", "Restless-Legs-Syndrom",
+        "Restriktive Kardiomyopathie", "Restriktive Lungenerkrankung",
+        "Retinalarterienokklusion", "Retinalvenenverschluss", "Retinitis pigmentosa",
+        "Retinoblastom", "Retrograde Amnesie", "Retropharyngealer Abszess", "Reye-Syndrom",
+        "Rh-Erythroblastose (Morbus haemolyticus neonatorum)", "Rhabdomyolyse",
+        "Rhabdomyom (Herzmuskulatur)", "Rheumatische Herzerkrankung", "Rheumatoide Arthritis",
+        "Rhinosinusitis", "Rhinovirus-Infektion (Erkältung)", "Riedel-Thyreoiditis",
+        "Riesenzellarteriitis (Temporalarteriitis)", "Riesenzelltumor des Knochens",
+        "Rocky-Mountain-Fleckfieber (Rickettsia rickettsii)", "Röteln", "Rosazea",
+        "Roseola infantum (HHV-6)", "Rotatorenmanschettenruptur", "Rotavirus-Gastroenteritis", "Rotor-Syndrom",
+        "RSV-Bronchiolitis", "Saisonal abhängige Depression", "Salmonellose",
+        "Sandhoff-Erkrankung", "Sarkoidose", "SARS-CoV-2-Infektion (COVID-19)", "Scharlach",
+        "Schilddrüsenadenom", "Schistosomiasis", "Schizoaffektive Störung",
+        "Schizoide Persönlichkeitsstörung", "Schizophrenie", "Schizophreniforme Störung",
+        "Schizotypische Persönlichkeitsstörung", "Schlafapnoe", "Schlaganfall", "Schultersteife (Frozen Shoulder)",
+        "Schwangerschaftscholestase", "Schwere kombinierte Immundefizienz (SCID)",
+        "Seborrhoische Dermatitis", "Seborrhoische Keratose", "Sehnenruptur",
+        "Sekundäre biliäre Zirrhose", "Sekundäre Hypertonie", "Sekundärer Hyperaldosteronismus",
+        "Sekundärer Hyperparathyreoidismus", "Sekundärer Spontanpneumothorax",
+        "Selektiver IgA-Mangel", "Selektiver Mutismus", "Seminom", "Sepsis",
+        "Septische Arthritis", "Septischer Schock", "Seröses Karzinom", "Seröses Zystadenom",
+        "Serotonin-Syndrom", "Serratierte Polypen", "Sertoli-Leydig-Zelltumor",
+        "Sertoli-Zelltumor des Hodens", "Sexuelle Dysfunktion", "Sheehan-Syndrom",
+        "Shigellose", "SIADH", "Sialadenitis", "Sialolithiasis", "Sichelzellanämie",
+        "Sick-Sinus-Syndrom", "Sideroblastische Anämie", "Silikose",
+        "Simulation (Malingering)", "Sinding-Larsen-Johansson-Syndrom", "Sinusitis",
+        "Sinusvenenthrombose", "Sjögren-Syndrom", "Skabies", "Sklerodermie",
+        "Sklerosierende Adenose der Brust", "Skombroid-Fischvergiftung",
+        "Smith-Magenis-Syndrom", "Somatisierungsstörung",
+        "Somatoforme Störung (Somatische Belastungsstörung)", "Somatostatinom",
+        "Soziale Angststörung", "Spannungskopfschmerz", "Spannungspneumothorax",
+        "Speicheldrüsentumoren", "Spermatozele", "Spina bifida occulta",
+        "Spinale Muskelatrophie (Werdnig-Hoffmann-Krankheit)", "Spinaler Epiduralabszess",
+        "Spinalkanalstenose", "Spondylolisthesis", "Spontane bakterielle Peritonitis",
+        "Sporotrichose", "ST-Hebungsinfarkt (STEMI)", "Stabile Angina pectoris",
+        "Staphylococcus-aureus-Impetigo", "Staphylococcus-aureus-Zellulitis",
+        "Staphylococcus-epidermidis-Infektion", "Staphylococcus-saprophyticus-Infektion",
+        "Staphylogenes Schälblasen-Syndrom", "Status epilepticus", "STEMI",
+        "Stevens-Johnson-Syndrom (SJS)", "Störung des Sozialverhaltens",
+        "Streptococcus-agalactiae-Infektion (Gruppe-B-Streptokokken)",
+        "Streptococcus-bovis-Infektion",
+        "Streptococcus-pyogenes-Pharyngitis (Gruppe-A-Streptokokken)", "Strongyloidose",
+        "Struma ovarii", "Sturge-Weber-Syndrom", "Subakute kombinierte Degeneration",
+        "Subarachnoidalblutung (SAB)", "Subduralhämatom", "Subfalzine Herniation",
+        "Subklavian-Steal-Syndrom", "Submuköse Polypen", "Substanzgebrauchsstörung",
+        "Supines Hypotonie-Syndrom", "Swyer-Syndrom",
+        "Syndrom des scheinbaren Mineralokortikoidexzesses (SAME)",
+        "Syphilis (Treponema pallidum)", "Syringomyelie",
+        "Systemische juvenile idiopathische Arthritis (sJIA)",
+        "Systemische Sklerose (Sklerodermie)", "Systemischer Lupus erythematodes (SLE)",
+        "Systolische Dysfunktion", "Tabes dorsalis", "Tachykardie",
+        "Taenia solium (Neurozystizerkose)", "Takayasu-Arteriitis", "Takotsubo-Kardiomyopathie",
+        "Tay-Sachs-Erkrankung", "Temporomandibuläre Dysfunktion",
+        "Tertiärer Hyperparathyreoidismus", "Tetanus", "Thecalutein-Zyste des Ovars",
+        "Thrombangiitis obliterans (Morbus Buerger)", "Thrombose",
+        "Thrombotische thrombozytopenische Purpura (TTP)", "Thyreoglossusgang-Zyste",
+        "Thyreotoxische Krise", "Ticstörung", "Tiefe Venenthrombose (TVT)", "Tinea capitis",
+        "Tinea corporis (Ringelflechte)", "Tinea cruris", "Tinea pedis (Fußpilz)",
+        "Tinea unguium (Onychomykose)", "Tinnitus", "Todd-Parese", "Tollwut",
+        "Tonisch-klonischer Anfall", "Tonischer Anfall", "Torsade de Pointes",
+        "Torus-Fraktur (Wulstfraktur)", "Totale Lungenvenenfehlmündung (TAPVR)",
+        "Tourette-Syndrom", "Toxische multinodöse Struma", "Toxisches Megakolon",
+        "Toxocariasis (Viszerale Larva migrans)", "Toxoplasmose",
+        "Transiente ischämische Attacke (TIA)", "Transverse Myelitis",
+        "Traumatischer Pneumothorax", "Trennungsangststörung", "Trichinellose",
+        "Trichomoniasis", "Trichotillomanie", "Trichuriasis (Peitschenwurm)",
+        "Trigeminusneuralgie", "Trikuspidalatresie", "Trikuspidalklappenstenose",
+        "Trikuspidalklappensuffizienz", "Trizyklische-Antidepressiva-Toxizität",
+        "Trochlearisparese (N.-IV.-Parese)", "Trockene Makuladegeneration", "Tropische Sprue",
+        "Truncus arteriosus communis", "Tuberkulöse Meningitis", "Tuberkulose",
+        "Tuberöse Sklerose", "Tubo-ovarieller Abszess", "Tubuläre Azidose",
+        "Tularämie (Francisella tularensis)", "Turcot-Syndrom", "Turner-Syndrom",
+        "Typhus abdominalis (Salmonella typhi)", "Tyrosinämie", "Überlaufinkontinenz",
+        "Ulcus cruris", "Ulcus ventriculi", "Unkale Herniation", "Unreifes Teratom",
+        "Urämische Thrombozytopathie", "Urothelkarzinom der Harnblase", "Urtikaria",
+        "Uterusatonie", "Uterusruptur", "Vaginales Klarzellkarzinom",
+        "Vaginales Plattenepithelkarzinom", "Vaginales Sarcoma botryoides", "Varikosis",
+        "Varikozele", "Varizellen", "Vasa praevia", "Vaskuläre Demenz", "Vaskulitis",
+        "Vena-cava-superior-Syndrom", "Venöse Insuffizienz", "Ventrikelseptumdefekt (VSD)",
+        "Ventrikuläre Extrasystolen (VES)", "Ventrikuläre Tachykardie (VT)",
+        "Verbrennung 1. Grades", "Vermeidend-restriktive Persönlichkeitsstörung",
+        "Verschluss der Arteria spinalis anterior (Anteriores Kordsyndrom)",
+        "Vesikoureteraler Reflux", "VIPom", "Virale Hepatitis", "Vitamin-K-Mangel",
+        "Vitiligo", "Volvulus", "Von-Hippel-Lindau-Erkrankung", "Von-Willebrand-Erkrankung",
+        "Vorhofflattern", "Vorhofflimmern", "Vorhofseptumdefekt (ASD)",
+        "Vulnerables-Kind-Syndrom", "Vulvakarzinom", "Waardenburg-Syndrom", "WAGR-Syndrom",
+        "Wahnhafte Störung", "Waldenström-Makroglobulinämie",
+        "Warme autoimmune hämolytische Anämie", "Warthin-Tumor", "Warzen (Verrucae vulgares)",
+        "Waterhouse-Friderichsen-Syndrom", "Weiblicher hypergonadotroper Hypogonadismus",
+        "Wernicke-Aphasie", "Wernicke-Korsakow-Syndrom", "Williams-Syndrom", "Wilms-Tumor",
+        "Windpocken (Varizellen)", "Winkelblockglaukom", "Wiskott-Aldrich-Syndrom",
+        "Wolff-Chaikoff-Effekt (Jodexzess-Hypothyreose)", "Wolff-Parkinson-White-Syndrom (WPW)",
+        "X-chromosomale Adrenoleukodystrophie", "Xeroderma pigmentosum",
+        "Yersinia-enterocolitica-Infektion", "Zäkumvolvulus", "Zellweger-Syndrom",
+        "Zenker-Divertikel", "Zentrale pontine Myelinolyse (Osmotische Demyelinisierung)",
+        "Zentrale Schlafapnoe", "Zentrale transtentorielle Herniation",
+        "Zentraler Diabetes insipidus", "Zentraler Schwindel", "Zentrales Kordsyndrom",
+        "Zentrales Postschlaganfall-Schmerzsyndrom (CPSS)", "Zerebrales Ödem",
+        "Zerebralparese", "Zervikale Myelopathie", "Zervikale Spondylose",
+        "Zervikales Carcinoma in situ", "Zika-Virus-Infektion", "Zirbeldrüsentumor",
+        "Zöliakie", "Zollinger-Ellison-Syndrom", "Zwanghafte Persönlichkeitsstörung",
+        "Zwangsstörung (OCD)", "Zyanidvergiftung", "Zyklothyme Störung", "Zystinurie",
+        "Zystische Fibrose", "Zystitis", "Zytomegalievirus-Infektion (CMV)"
+    ].sort();
+
+
+    // ===== RÄTSEL-DATENBANK =====
+    let puzzles = [];
+    let puzzlesLoaded = false;
+
+    async function loadPuzzles() {
+        try {
+            const { data, error } = await sb
+                .from('arztdle_puzzles')
+                .select('*')
+                .order('id', { ascending: true });
+            if (error) throw error;
+            puzzles = data.map(p => ({
+                id:       p.id,
+                date:     p.date,
+                solution: p.solution,
+                hints:    p.hints
+            }));
+            puzzlesLoaded = true;
+        } catch(e) {
+            console.error('Fehler beim Laden der Rätsel:', e);
+        }
+    }
+
+
+    // ===== SPIELZUSTAND =====
+    let currentPuzzleIndex = 0;
+    let revealedCount      = 1;
+    let usedGuesses        = new Set();
+    let dailyFinished      = false;
+    let currentUser        = null;
+    let countdownInterval  = null; // FIX: Countdown-Interval-ID speichern
+
+    // ===== DOM-REFERENZEN =====
+    const input   = document.getElementById('guess-input');
+    const suggBox = document.getElementById('suggestions');
+    let selectedIndex = -1;
+
+
+    // ===== HILFSFUNKTION: HEUTIGES DATUM =====
+    function getToday() {
+        const now = new Date();
+        return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+    }
+
+
+    // ===== FORTSCHRITT SPEICHERN =====
+   function saveDailyProgress(finished, solved) {
+        localStorage.setItem('dailyProgress', JSON.stringify({
+            date:          getToday(),
+            revealedCount: revealedCount,
+            usedGuesses:   [...usedGuesses],
+            finished:      finished,
+            solved:        solved
+        }));
+    
+        if (finished) {
+            const done = JSON.parse(localStorage.getItem('completedPuzzles') || '{}');
+            done[puzzles[currentPuzzleIndex].id]               = solved ? 'solved' : 'failed';
+            done[puzzles[currentPuzzleIndex].id + '_attempts'] = revealedCount;
+            localStorage.setItem('completedPuzzles', JSON.stringify(done));
+    
+            const lbName = localStorage.getItem('leaderboardName');
+            if (lbName && currentUser) {
+                const total    = parseInt(localStorage.getItem('statTotal')  || '0');
+                const solvedN  = parseInt(localStorage.getItem('statSolved') || '0');
+                const hints    = parseInt(localStorage.getItem('statHints')  || '0');
+                const avgHints = solvedN > 0 ? parseFloat((hints / solvedN).toFixed(1)) : 0;
+                const streak   = parseInt(localStorage.getItem('streak')     || '0');
+                sb.from('leaderboard').upsert({
+                    user_id: currentUser.id, name: lbName,
+                    total, solved: solvedN, avg_hints: avgHints, streak,
+                    updated_at: new Date().toISOString()
+                }, { onConflict: 'user_id' });
+            }
+    
+            // Versuch anonym in Supabase speichern
+            sb.from('puzzle_attempts').insert({
+                puzzle_id:  puzzles[currentPuzzleIndex].id,
+                hints_used: revealedCount
+            });
+        }
+    }
+
+
+    // ===== NAVIGATION =====
+    function showSection(id) {
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        if (id === 'archive') renderArchive();
+        if (id === 'stats')   renderStats();
+        if (id === 'play')    loadDaily();
+    }
+
+
+    // ===== SPIEL LADEN =====
+    function loadDaily() {
+        isArchiveMode = false;
+        const today  = getToday();
+        let puzzle   = puzzles.find(p => p.date === today);
+        if (!puzzle) {
+            const past = puzzles.filter(p => p.date <= today);
+            puzzle = past[past.length - 1];
+        }
+        if (!puzzle) puzzle = puzzles[0];
+
+        const saved = JSON.parse(localStorage.getItem('dailyProgress') || 'null');
+
+        initGame(puzzle);
+
+        if (saved && saved.date === today) {
+            revealedCount = saved.revealedCount;
+            usedGuesses   = new Set(saved.usedGuesses);
+            dailyFinished = saved.finished;
+
+            const hintsToShow = saved.finished ? puzzles[currentPuzzleIndex].hints.length : saved.revealedCount;
+            for (let i = 0; i < hintsToShow; i++) {
+                const el = document.getElementById(`h-${i}`);
+                if (el) el.classList.add('visible');
+            }
+
+            const msg = document.getElementById('status-msg');
+            if (saved.finished) {
+                if (saved.solved) {
+                    msg.innerText   = 'Richtig! Hervorragende Diagnose. 🩺';
+                    msg.style.color = 'var(--success)';
+                } else {
+                    msg.innerText   = `Leider nicht richtig. Die Lösung war: ${puzzle.solution}`;
+                    msg.style.color = 'var(--error)';
+                }
+                startCountdown();
+            }
+        }
+    }
+    
+    function initGame(puzzle) {
+        revealedCount = 1;
+        usedGuesses   = new Set();
+        dailyFinished = false;
+
+        document.getElementById('meta-info').innerText  = `Arztdle #${puzzle.id} - ${puzzle.date}`;
+        document.getElementById('status-msg').innerText = '';
+        document.getElementById('status-msg').style.color = '';
+        document.getElementById('countdown-box').style.display = 'none';
+        document.getElementById('guess-input').disabled = false;
+        document.getElementById('submit-btn').disabled  = false;
+        input.value = '';
+        input.focus();
+        // Alle Hinweis-Boxen ausblenden
+        for (let i = 0; i < 6; i++) {
+            const el = document.getElementById(`h-${i}`);
+            if (el) el.classList.remove('visible');
+        }
+
+        // FIX: Alten Countdown aufräumen
+        if (countdownInterval) {
+            clearInterval(countdownInterval);
+            countdownInterval = null;
+        }
+
+        const wrapper = document.getElementById('hint-wrapper');
+        wrapper.innerHTML = '';
+        puzzle.hints.forEach((h, i) => {
+            const div     = document.createElement('div');
+            div.className = `hint-box ${i === 0 ? 'visible' : ''}`;
+            div.id        = `h-${i}`;
+            div.innerText = h;
+            wrapper.appendChild(div);
+        });
+
+        currentPuzzleIndex = puzzles.indexOf(puzzle);
+        updateStreakBanner();
+    }
+
+
+    // ===== ANTWORT PRÜFEN =====
+    function checkAnswer() {
+        const guess    = input.value.trim().toLowerCase();
+        const solution = puzzles[currentPuzzleIndex].solution.toLowerCase();
+        const msg      = document.getElementById('status-msg');
+
+        if (!guess) return;
+
+        if (usedGuesses.has(guess)) {
+            msg.innerText   = 'Diese Diagnose hast du bereits versucht.';
+            msg.style.color = '#999';
+            input.value     = '';
+            return;
+        }
+
+        usedGuesses.add(guess);
+
+        if (usedGuesses.size === 1) {
+            localStorage.setItem('statTotal', parseInt(localStorage.getItem('statTotal') || '0') + 1);
+        }
+
+        document.querySelectorAll('.suggestion').forEach(s => {
+            if (s.innerText.toLowerCase() === guess) {
+                s.style.color         = '#bbb';
+                s.style.pointerEvents = 'none';
+            }
+        });
+
+        if (guess === solution) {
+            msg.innerText   = 'Richtig! Hervorragende Diagnose. 🩺';
+            msg.style.color = 'var(--success)';
+            dailyFinished   = true;
+            localStorage.setItem('statSolved', parseInt(localStorage.getItem('statSolved') || '0') + 1);
+            localStorage.setItem('statHints',  parseInt(localStorage.getItem('statHints')  || '0') + revealedCount);
+            updateStreak(true);
+            saveDailyProgress(true, true);
+            startCountdown();
+            confetti({ particleCount: 120, spread: 70, origin: { y: 0.8 }, colors: ['#2a9d8f', '#3aad4e', '#6bbf72', '#e8cc72'] });
+            setTimeout(() => showResult(true, puzzles[currentPuzzleIndex].solution, revealedCount), 1500);
+            for (let i = 0; i < 6; i++) {
+                const el = document.getElementById(`h-${i}`);
+                if (el) el.classList.add('visible');
+            }
+        } else {
+            if (revealedCount < puzzles[currentPuzzleIndex].hints.length) {
+                document.getElementById(`h-${revealedCount}`).classList.add('visible');
+                revealedCount++;
+                msg.innerText   = 'Falsch! Ein weiterer Hinweis wurde freigeschaltet.';
+                msg.style.color = 'orange';
+                saveDailyProgress(false, false);
+            } else {
+                msg.innerText   = `Leider nicht richtig. Die Lösung war: ${puzzles[currentPuzzleIndex].solution}`;
+                msg.style.color = 'var(--error)';
+                dailyFinished   = true;
+                saveDailyProgress(true, false);
+                updateStreak(false);
+                setTimeout(() => showResult(false, puzzles[currentPuzzleIndex].solution, revealedCount), 800);
+            }
+        }
+        input.value = '';
+    }
+
+
+    // ===== AUTOCOMPLETE =====
+    input.addEventListener('keydown', (e) => {
+        const suggestions = suggBox.querySelectorAll('.suggestion');
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            selectedIndex = Math.min(selectedIndex + 1, suggestions.length - 1);
+            suggestions.forEach((s, i) => {
+                s.style.background = i === selectedIndex ? '#f0f0f0' : '';
+                if (i === selectedIndex) s.scrollIntoView({ block: 'nearest' });
+            });
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            selectedIndex = Math.max(selectedIndex - 1, -1);
+            suggestions.forEach((s, i) => {
+                s.style.background = i === selectedIndex ? '#f0f0f0' : '';
+                if (i === selectedIndex) s.scrollIntoView({ block: 'nearest' });
+            });
+        } else if (e.key === 'Enter') {
+            if (selectedIndex >= 0 && suggestions[selectedIndex]) {
+                input.value       = suggestions[selectedIndex].innerText;
+                suggBox.innerHTML = '';
+                selectedIndex     = -1;
+                input.focus();
+            } else {
+                suggBox.innerHTML = '';
+                checkAnswer();
+            }
+        } else {
+            selectedIndex = -1;
+        }
+    });
+
+    input.addEventListener('input', () => {
+        const val = input.value.toLowerCase();
+        suggBox.innerHTML = '';
+        selectedIndex     = -1;
+        if (!val) return;
+
+        const startsWith = allDiagnoses.filter(d => d.toLowerCase().startsWith(val));
+        const contains   = allDiagnoses.filter(d => !d.toLowerCase().startsWith(val) && d.toLowerCase().includes(val));
+        const matches    = [...startsWith, ...contains].slice(0, 8);
+        matches.forEach(m => {
+            const div         = document.createElement('div');
+            div.className     = 'suggestion';
+            const alreadyUsed = usedGuesses.has(m.toLowerCase());
+            div.innerText     = m;
+            if (alreadyUsed) {
+                div.style.color         = '#bbb';
+                div.style.pointerEvents = 'none';
+            }
+            div.onclick = () => {
+                if (alreadyUsed) return;
+                input.value       = m;
+                suggBox.innerHTML = '';
+                input.focus();
+            };
+            suggBox.appendChild(div);
+        });
+    });
+
+    document.addEventListener('click', (e) => {
+        if (e.target !== input) suggBox.innerHTML = '';
+    });
+
+
+    // ===== ARCHIV (FIX: Gelöste Rätsel zeigen "Ansehen" statt "Spielen") =====
+    function renderArchive() {
+        const today = getToday();
+        const cont  = document.getElementById('archive-content');
+        cont.innerHTML = '';
+        const done = JSON.parse(localStorage.getItem('completedPuzzles') || '{}');
+
+        puzzles
+            .filter(p => p.date <= today)
+            .forEach(p => {
+                const div     = document.createElement('div');
+                div.className = 'archive-item';
+                const status = done[p.id];
+                const badge  = status === 'solved'  ? ' <span style="color:#27ae60;font-size:1.1rem">✓</span>'
+                             : status === 'failed'  ? ' <span style="color:#c0392b;font-size:1.1rem">✗</span>'
+                             : '';
+                const isCompleted = status === 'solved' || status === 'failed';
+                const btnLabel    = isCompleted ? 'Ansehen' : 'Spielen';
+                const btnBg       = isCompleted ? '#888' : 'var(--accent)';
+
+                div.innerHTML = `<span>#${p.id} - ${p.date}${badge}</span>
+                    <button style="background:${btnBg};color:white;border:none;padding:5px 12px;border-radius:6px;cursor:pointer;font-weight:bold"
+                        onclick="initGameById(${p.id})">${btnLabel}</button>`;
+                cont.appendChild(div);
+            });
+    }
+
+    let isArchiveMode = false;
+
+    function initGameById(id) {
+        const p = puzzles.find(x => x.id === id);
+        isArchiveMode = true;
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.getElementById('play').classList.add('active');
+        initGame(p);
+
+        const done   = JSON.parse(localStorage.getItem('completedPuzzles') || '{}');
+        const status = done[id];
+        if (status) {
+            const msg      = document.getElementById('status-msg');
+            const attempts = done[id + '_attempts'] || '?';
+            if (status === 'solved') {
+                msg.innerHTML   = `Du hast dieses Rätsel bereits in ${attempts} Versuch${attempts !== 1 ? 'en' : ''} gelöst. 🩺<br><span style="font-weight:normal;font-size:0.9rem;color:#888">Die Lösung war: ${p.solution}</span>`;
+                msg.style.color = 'var(--success)';
+            } else {
+                msg.innerHTML   = `Du hast dieses Rätsel leider nicht geschafft.<br><span style="font-weight:normal;font-size:0.9rem;color:#888">Die Lösung war: ${p.solution}</span>`;
+                msg.style.color = 'var(--error)';
+            }
+            for (let i = 0; i < p.hints.length; i++) {
+                const el = document.getElementById(`h-${i}`);
+                if (el) el.classList.add('visible');
+            }
+            document.getElementById('guess-input').disabled = true;
+            document.getElementById('submit-btn').disabled  = true;
+        }
+    }
+
+
+    // ===== STATISTIK =====
+    function renderStats() {
+        const total      = parseInt(localStorage.getItem('statTotal')  || '0');
+        const solved     = parseInt(localStorage.getItem('statSolved') || '0');
+        const hintsTotal = parseInt(localStorage.getItem('statHints')  || '0');
+        const streak     = parseInt(localStorage.getItem('streak')     || '0');
+        const rate       = total  > 0 ? Math.round((solved / total) * 100) : 0;
+        const avgHints   = solved > 0 ? (hintsTotal / solved).toFixed(1)   : '-';
+
+        document.getElementById('stats-content').innerHTML = `
+            <div class="stats-grid">
+                <div class="stats-box"><div class="number">${total}</div><div class="label">Gespielte Rätsel</div></div>
+                <div class="stats-box"><div class="number">${solved}</div><div class="label">Gelöst</div></div>
+                <div class="stats-box"><div class="number">${rate}%</div><div class="label">Erfolgsquote</div></div>
+                <div class="stats-box"><div class="number">${avgHints}</div><div class="label">Ø Hinweise</div></div>
+                <div class="stats-box" style="grid-column:span 2"><div class="number">🔥 ${streak}</div><div class="label">Aktuelle Streak</div></div>
+            </div>`;
+    }
+
+
+    // ===== STREAK =====
+    function updateStreak(solved) {
+        const today      = getToday();
+        const lastPlayed = localStorage.getItem('lastPlayed');
+        let streak       = parseInt(localStorage.getItem('streak') || '0');
+
+        if (solved && lastPlayed !== today) {
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            const yStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth()+1).padStart(2,'0')}-${String(yesterday.getDate()).padStart(2,'0')}`;
+            streak = lastPlayed === yStr ? streak + 1 : 1;
+            localStorage.setItem('streak',     streak);
+            localStorage.setItem('lastPlayed', today);
+        }
+
+        updateStreakBanner();
+    }
+
+    function updateStreakBanner() {
+        const streak = parseInt(localStorage.getItem('streak') || '0');
+        const banner = document.getElementById('streak-banner');
+        banner.innerText = streak > 0 ? `🔥 ${streak} Tag${streak > 1 ? 'e' : ''} in Folge` : '';
+    }
+
+
+    // ===== COUNTDOWN (FIX: Memory Leak behoben) =====
+    function startCountdown() {
+        document.getElementById('countdown-box').style.display = 'block';
+        document.getElementById('guess-input').disabled = true;
+        document.getElementById('submit-btn').disabled  = true;
+
+        // FIX: Altes Interval aufräumen bevor neues gestartet wird
+        if (countdownInterval) {
+            clearInterval(countdownInterval);
+            countdownInterval = null;
+        }
+
+        function update() {
+            const now      = new Date();
+            const tomorrow = new Date(now);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            tomorrow.setHours(0, 0, 0, 0);
+            const diff = tomorrow - now;
+            const h    = String(Math.floor(diff / 3600000)).padStart(2, '0');
+            const m    = String(Math.floor((diff % 3600000) / 60000)).padStart(2, '0');
+            const s    = String(Math.floor((diff % 60000)  / 1000)).padStart(2, '0');
+            document.getElementById('countdown-timer').innerText = `${h}:${m}:${s}`;
+        }
+        update();
+        countdownInterval = setInterval(update, 1000);
+    }
+
+
+    // ===== DARK MODE =====
+    function toggleDark() {
+        document.body.classList.toggle('dark');
+        const isDark  = document.body.classList.contains('dark');
+        document.getElementById('dark-mode-btn').innerText = isDark ? '☀️' : '🌙';
+        localStorage.setItem('darkMode', isDark);
+    }
+
+    if (localStorage.getItem('darkMode') === 'true') {
+        document.body.classList.add('dark');
+        document.getElementById('dark-mode-btn').innerText = '☀️';
+    }
+
+
+    // ===== IMPRESSUM =====
+    function closeImpressum(event) {
+        const modal = document.getElementById('impressum-modal');
+        if (!event || event.target === modal) modal.classList.remove('visible');
+    }
+
+
+    // ===== ERGEBNIS POP-UP =====
+    async function showResult(correct, solution, attempts) {
+        document.getElementById('result-emoji').innerText    = correct ? '🎉' : '😔';
+        document.getElementById('result-title').innerText    = correct ? 'Richtig!' : 'Nicht geschafft';
+        document.getElementById('result-solution').innerText = correct
+            ? `Die Diagnose war: ${solution}`
+            : `Die richtige Diagnose war: ${solution}`;
+        document.getElementById('result-attempts').innerText = correct
+            ? `Geschafft auf Versuch ${attempts} von 6`
+            : `Du hast alle 6 Versuche aufgebraucht`;
+
+        document.getElementById('result-modal').classList.add('visible');
+
+        try {
+            const puzzleId = puzzles[currentPuzzleIndex].id;
+            const { data } = await sb
+                .from('puzzle_attempts')
+                .select('hints_used')
+                .eq('puzzle_id', puzzleId);
+
+            if (data && data.length > 1) {
+                const avg = (data.reduce((s, r) => s + r.hints_used, 0) / data.length).toFixed(1);
+                const comparison = attempts < avg ? 'besser als' : attempts > avg ? 'schlechter als' : 'genau wie';
+                document.getElementById('result-attempts').innerText +=
+                    `\nDurchschnitt aller Spieler: Hinweis ${avg} · Du warst ${comparison} der Durchschnitt`;
+            }
+        } catch(e) {
+            console.warn('Durchschnitt konnte nicht geladen werden:', e);
+        }
+    }
+
+
+    // ===== INITIALISIERUNG =====
+    // Auth wird über profil.js gehandelt
+    // currentUser wird von profil.js via _sb gesetzt
+    async function initUser() {
+        try {
+            const { data: { user } } = await sb.auth.getUser();
+            currentUser = user;
+            if (user && !localStorage.getItem('leaderboardName')) {
+                const { data } = await sb.from('leaderboard').select('name').eq('user_id', user.id).maybeSingle();
+                if (data) localStorage.setItem('leaderboardName', data.name);
+            }
+        } catch(e) {}
+    }
+
+    async function init() {
+        await Promise.all([initUser(), loadPuzzles()]);
+        loadDaily();
+        updateStreakBanner();
+    }
+
+    init();
+
+</script>
+<script src="profil.js"></script>
+</body>
+</html>
